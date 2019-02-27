@@ -20,10 +20,12 @@ plot_treemap <- function(data, exp, rep, sample, geneclass, title='', palette="S
     check_serp_class(data)
 
     if (ncol(geneclass) == 2 && !('class' %in% colnames(geneclass)) && 'gene' %in% colnames(geneclass))
-        geneclass <- dplyr::rename(geneclass, class=dplyr::matches('gene'))
-    classes <- c(levels(geneclass$class), 'unknown')
+        geneclass <- dplyr::rename(geneclass, class=-dplyr::matches('gene'))
+    classes <- levels(geneclass$class)
+    if (!('unknown' %in% classes))
+        classes <- c(classes, 'unknown')
 
-    reads_per_gene_sample <- tibble::enframe(rowSums(get_data(data)[[exp]][[rep]][[sample]][[1]], na.rm=TRUE), name='gene', value='read_sum') %>%
+    reads_per_gene_sample <- tibble::enframe(Matrix::rowSums(get_data(data)[[exp]][[rep]][[sample]][[1]], na.rm=TRUE), name='gene', value='read_sum') %>%
         dplyr::left_join(geneclass) %>%
         tidyr::replace_na(list(class='unknown')) %>%
         dplyr::mutate(class=factor(class, classes, ordered=TRUE)) %>%
@@ -34,7 +36,7 @@ plot_treemap <- function(data, exp, rep, sample, geneclass, title='', palette="S
         max(s)
     fraction_reads <- dplyr::group_by(reads_per_gene_sample, class) %>%
         dplyr::summarize(n=sum(read_sum)) %>%
-        dplyr::ungroup %>%
+        dplyr::ungroup() %>%
         dplyr::mutate(perc = n / sum(reads_per_gene_sample$read_sum) * 100) %>%
         tibble::column_to_rownames('class')
     reads_per_gene_sample <- dplyr::group_by(reads_per_gene_sample, class) %>%
