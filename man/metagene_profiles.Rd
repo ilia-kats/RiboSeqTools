@@ -4,23 +4,26 @@
 \alias{metagene_profiles}
 \title{Calculate metagene profiles}
 \usage{
-metagene_profiles(data, profilefun, len, filter = NULL, bin = 1,
-  binmethod = c("sum", "mean"), normalizefun = NULL,
-  align = c("start", "stop"), nboot = 100, what = "byaa")
+metagene_profiles(data, profilefun, len, bin, filter = NULL,
+  binwidth = 1, binmethod = c("sum", "mean"), normalizefun = NULL,
+  align = c("start", "stop"), nboot = 100)
 }
 \arguments{
 \item{data}{A \code{serp_data} object}
 
 \item{profilefun}{Function that calculates a profile. Must accept named arguments for all sample types
 present in the data set as well as \code{exp} (experiment name), \code{rep} (replicate name),
-\code{bin} (bin width), \code{binmethod} (binning method), \code{align} (alignment). Must return
+\code{binwidth} (bin width), \code{binmethod} (binning method), \code{align} (alignment). Must return
 either a single numeric vector or a named list of numeric vectors.}
 
 \item{len}{Length of the profile.}
 
+\item{bin}{Bin level (\code{bynuc} or \code{byaa}). If missing, the default binning level of the data set
+will be used (TODO: document defaults)}
+
 \item{filter}{List of genes to include. Defaults to all genes.}
 
-\item{bin}{Bin width.}
+\item{binwidth}{Bin width.}
 
 \item{binmethod}{How to bin the data. \code{sum}: Sums all read counts, \code{mean}: Averages read counts}
 
@@ -33,8 +36,6 @@ this case, genes will be aligned to the given positions and the profile will be 
 \code{len} positions in either direction.}
 
 \item{nboot}{Number of bootstrap samples.}
-
-\item{what}{Binning type to use, one of \code{byaa} or \code{bynuc}.}
 }
 \description{
 Calculates a metagene profile from the full data set as well as bootstrapping samples (sampling genes).

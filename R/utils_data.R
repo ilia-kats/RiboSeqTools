@@ -108,12 +108,12 @@ is_normalized <- function(data) {
 #' Set default parameters of a \code{serp_data} object
 #'
 #' @param data A \code{serp_data} object.
-#' @param defaults Named list of default parameters.
+#' @param ... Name-value-pairs of parameters
 #' @export
-set_defaults <- function(data, defaults) {
+set_defaults <- function(data, ...) {
     check_serp_class(data)
-    #TODO validate_defaults(defaults)
-    data$defaults <- defaults
+    pars <- rlang::list2(...)
+    data$defaults <- purrr::list_modify(data$defaults, pars)
     data
 }
 

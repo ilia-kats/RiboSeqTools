@@ -4,12 +4,12 @@
 \alias{set_defaults}
 \title{Set default parameters of a \code{serp_data} object}
 \usage{
-set_defaults(data, defaults)
+set_defaults(data, ...)
 }
 \arguments{
 \item{data}{A \code{serp_data} object.}
 
-\item{defaults}{Named list of default parameters.}
+\item{...}{Name-value-pairs of parameters}
 }
 \description{
 Set default parameters of a \code{serp_data} object

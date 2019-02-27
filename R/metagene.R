@@ -46,13 +46,13 @@ mat_to_df <- function(mat, boot) {
 #' @param lengths Named vector of gene/ORF lengths.
 #' @param pwidth Width of the final matrices.
 #' @param filter Genes to include. Defaults to all genes.
-#' @param bin Bin width, if binning is desired.
+#' @param binwidth Bin width, if binning is desired.
 #' @param binmethod Binning method. \code{sum}: Read counts within each bin are summed up; \code{mean}:
 #'      Read counts are averaged.
 #' @return Named list of matrices. Matrices are of width \eqn{2\cdot \text{pwidth} + 1}, with \code{pos} in
 #'      column \eqn{\text{pwidth} + 1}.
 #' @export
-make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, bin=1, binmethod=c('sum', 'mean')) {
+make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, binwidth=1, binmethod=c('sum', 'mean')) {
     binmethod <- match.arg(binmethod)
     binmethod <- switch(binmethod, sum=sum, mean=mean)
     BiocParallel::bplapply(data, function(d) {
@@ -63,20 +63,20 @@ make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, bin=1, bi
         .lengths <- lengths[filter];
         t(mapply(function(g, p, l) {
             tlen <- 2 * pwidth + 1
-            efflen <- ceiling(tlen / .bin)
+            efflen <- ceiling(tlen / binwidth)
             out <- rep(NA_real_, efflen)
             nstart <- max(1, pwidth - p + 2)
             nstop <- 2 * pwidth + 1 - (p + pwidth - min(l, p + pwidth))
-            if (bin > 1) {
+            if (binwidth > 1) {
                 bins <- rle(1:tlen / tlen * efflen)
                 starts <- c(1, cumsum(bins$lengths)[1:(length(bins$lengths))-1]+1)
                 ends <- cumsum(bins$lengths)
                 firstbin <- 1
                 lastbin <- length(bins$values)
                 if (pwidth > p)
-                    firstbin <- floor((pwidth - p) / bin)
+                    firstbin <- floor((pwidth - p) / binwidth)
                 if (p + pwidth > l)
-                    lastbin <- lastbin - floor((p + pwidth - l) / bin)
+                    lastbin <- lastbin - floor((p + pwidth - l) / binwidth)
                 start <- max(1, p - pwidth)
                 out[firstbin:lastbin] <- mapply(function(s, e)binmethod(d[g, s:e]), start + starts[firstbin:lastbin] - 1, start + ends[firstbin:lastbin] - 1)
             }
@@ -106,11 +106,13 @@ make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, bin=1, bi
 #' @param data A \code{serp_data} object
 #' @param profilefun Function that calculates a profile. Must accept named arguments for all sample types
 #'      present in the data set as well as \code{exp} (experiment name), \code{rep} (replicate name),
-#'      \code{bin} (bin width), \code{binmethod} (binning method), \code{align} (alignment). Must return
+#'      \code{binwidth} (bin width), \code{binmethod} (binning method), \code{align} (alignment). Must return
 #'      either a single numeric vector or a named list of numeric vectors.
 #' @param len Length of the profile.
+#' @param bin Bin level (\code{bynuc} or \code{byaa}). If missing, the default binning level of the data set
+#'      will be used (TODO: document defaults)
 #' @param filter List of genes to include. Defaults to all genes.
-#' @param bin Bin width.
+#' @param binwidth Bin width.
 #' @param binmethod How to bin the data. \code{sum}: Sums all read counts, \code{mean}: Averages read counts
 #' @param normalizefun Function that normalizes the data pefore binning and profile calculation. Must accept
 #'      the same arguments as \code{profilefun}. Must return a named list of matrices.
@@ -119,13 +121,13 @@ make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, bin=1, bi
 #'      this case, genes will be aligned to the given positions and the profile will be centered at 0, spanning
 #'      \code{len} positions in either direction.
 #' @param nboot Number of bootstrap samples.
-#' @param what Binning type to use, one of \code{byaa} or \code{bynuc}.
 #' @export
-metagene_profiles <- function(data, profilefun, len, filter=NULL, bin=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, what='byaa') {
+metagene_profiles <- function(data, profilefun, len, bin, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100) {
     check_serp_class(data)
+    bin <- get_default_param(data, bin)
     binmethod <- match.arg(binmethod)
     refs <- setNames(get_reference(data)$length, get_reference(data)$gene)
-    if (what == 'byaa')
+    if (bin == 'byaa')
         refs <- refs / 3
     d <- mapply(function(d, exp) {
         ret <- mapply(function(d, rep) {
@@ -137,11 +139,11 @@ metagene_profiles <- function(data, profilefun, len, filter=NULL, bin=1, binmeth
             }
 
             mats <- lapply(d, function(m) {
-                m <- m[[what]]
+                m <- m[[bin]]
                 cfilter <- if(is.null(.filter)) TRUE else .filter[.filter %in% rownames(m)]
                 m[cfilter,, drop=FALSE]
             })
-            pars <- list(exp=exp, rep=rep, bin=bin, binmethod=binmethod, align=align)
+            pars <- list(exp=exp, rep=rep, binwidth=binwidth, binmethod=binmethod, align=align)
 
             if (!is.null(normalizefun)) {
                 mats <- rlang::exec(normalizefun, !!!mats, !!!pars)
@@ -153,21 +155,21 @@ metagene_profiles <- function(data, profilefun, len, filter=NULL, bin=1, binmeth
 
                 len <- sapply(mats, function(m)min(ncol(m), len))
 
-                if (bin > 1) {
-                    rval <- ifelse(binmethod == 'mean', 1 / bin, 1)
+                if (binwidth > 1) {
+                    rval <- ifelse(binmethod == 'mean', 1 / binwidth, 1)
                     if (length(unique(sapply(mats, ncol))) == 1) {
-                        len <- ceiling(len[1] / .bin)
+                        len <- ceiling(len[1] / binwidth)
 
-                        r <- rep(c(rep(rval, bin), rep(0, ncol(mats[[1]]))), length.out=ncol(mats[[1]]) * len)
+                        r <- rep(c(rep(rval, binwidth), rep(0, ncol(mats[[1]]))), length.out=ncol(mats[[1]]) * len)
                         if (align == 'stop')
                             r <- rev(r)
                         r <- matrix(r, ncol=len, byrow=FALSE)
                         mats <- lapply(mats, function(m) tidyr::replace_na(m, 0) %*% r)
                     } else {
                         mats <- mapply(function(m, l) {
-                            len <- ceiling(l / bin)
+                            len <- ceiling(l / binwidth)
 
-                            r <- rep(c(rep(rval, bin), rep(0, ncol(m))), length.out=ncol(m) * len)
+                            r <- rep(c(rep(rval, binwidth), rep(0, ncol(m))), length.out=ncol(m) * len)
                             if (align == 'stop')
                                 r <- rev(r)
                             tidyr::replace_na(m, 0) %*% matrix(r, ncol=len, byrow=FALSE)
@@ -180,7 +182,7 @@ metagene_profiles <- function(data, profilefun, len, filter=NULL, bin=1, binmeth
                     m[,coords, drop=FALSE]
                 }, mats, len, SIMPLIFY=FALSE)
             } else {
-                mats <- make_aligned_mats(mats, align, refs, len, bin=1, binmethod='sum')
+                mats <- make_aligned_mats(mats, align, refs, len, binwidth=1, binmethod='sum')
             }
             all <- rlang::exec(profilefun, !!!mats, !!!pars)
             boot <- rlang::exec(do_boot, n=nboot, profilefun=profilefun, mats=mats, !!!pars)
@@ -200,9 +202,9 @@ metagene_profiles <- function(data, profilefun, len, filter=NULL, bin=1, binmeth
             if (length(align) == 1 && align %in% c('start', 'stop')) {
                 if (align == 'stop')
                     d$pos <- d$pos - (len - 1)
-                d$pos <- d$pos * bin
+                d$pos <- d$pos * binwidth
             } else {
-                d$pos <- (d$pos - len) %/% bin * bin
+                d$pos <- (d$pos - len) %/% binwidth * binwidth
 
                 # this is faster than binning in make_aligned_mats
                 bm <- switch(binmethod, sum=sum, mean=mean)
@@ -224,6 +226,7 @@ metagene_profiles <- function(data, profilefun, len, filter=NULL, bin=1, binmeth
 #' the real profile using all data, shading indicates a bootstrapping-based confdience interval.
 #'
 #' @param df A data frame created by \code{\link{metagene_profiles}}.
+#' @param ylab Y axis label
 #' @param exp Experiments to plot. Defaults to all experiments.
 #' @param colaes Variable to use for the color scale.
 #' @param align Alignment to use in X axis label.
@@ -232,7 +235,7 @@ metagene_profiles <- function(data, profilefun, len, filter=NULL, bin=1, binmeth
 #' @param ci.alpha Transparency level for the CI shading.
 #' @return A \code{\link[ggplot2]{ggplot}} object.
 #' @export
-plot_metagene_profiles <- function(df, exp=NULL, colaes=exp, align='start', highlightregion=list(), highlightargs=list(), conf.level=0.95, ci.alpha=0.3, ylab='enrichment') {
+plot_metagene_profiles <- function(df, ylab, exp=NULL, colaes=exp, align='start', highlightregion=list(), highlightargs=list(), conf.level=0.95, ci.alpha=0.3) {
     colaes <- enexpr(colaes)
     if (!is.null(exp))
         df <- filter(df, exp %in% !!exp)

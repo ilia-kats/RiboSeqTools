@@ -170,6 +170,9 @@ plot.serp_data <- function(data, gene, sample1, sample2, exp, rep, bin, window_s
     sample2 <- get_default_param(data, sample2)
     window_size <- get_default_param(data, window_size)
 
+    ylim <- get_default_param(plot_ylim)
+    ybreaks <- get_default_param(plot_ybreaks)
+
     colaes <- rlang::enexpr(colaes)
 
     df <- binom_ci_profile(data, gene, sample1, sample2, exp, rep, bin, window_size=window_size, conf.level=conf.level)
@@ -190,7 +193,7 @@ plot.serp_data <- function(data, gene, sample1, sample2, exp, rep, bin, window_s
                mean_alpha=mean(c(alpha, lead(alpha)), na.rm=TRUE)) %>%
         dplyr::ungroup() %>%
         ggplot2::ggplot(aes(fill=!!colaes)) +
-            ggplot2::scale_y_continuous(trans="log2", limits = 2^c(-2.8,6.8), oob=scales::squish, expand=ggplot2::expand_scale(), breaks=2^(-2:6)) +
+            ggplot2::scale_y_continuous(trans="log2", limits=ylim, oob=scales::squish, expand=ggplot2::expand_scale(), breaks=ybreaks) +
             ggplot2::scale_x_continuous(expand=ggplot2::expand_scale()) +
             ggplot2::scale_alpha_continuous(trans="sqrt", breaks=c(1,3,10,30), limits=c(0,30), name="prec", range=c(0.02,1)) +
             rlang::exec(annotate_profile, highlightregion=highlightregion, !!!highlightargs) +

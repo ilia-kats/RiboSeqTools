@@ -4,12 +4,14 @@
 \alias{plot_metagene_profiles}
 \title{Plot metagene profiles}
 \usage{
-plot_metagene_profiles(df, exp = NULL, colaes = exp, align = "start",
-  highlightregion = list(), highlightargs = list(),
-  conf.level = 0.95, ci.alpha = 0.3, ylab = "enrichment")
+plot_metagene_profiles(df, ylab, exp = NULL, colaes = exp,
+  align = "start", highlightregion = list(), highlightargs = list(),
+  conf.level = 0.95, ci.alpha = 0.3)
 }
 \arguments{
 \item{df}{A data frame created by \code{\link{metagene_profiles}}.}
+
+\item{ylab}{Y axis label}
 
 \item{exp}{Experiments to plot. Defaults to all experiments.}
 

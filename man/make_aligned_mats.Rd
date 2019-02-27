@@ -4,8 +4,8 @@
 \alias{make_aligned_mats}
 \title{Align read count tables}
 \usage{
-make_aligned_mats(data, pos, lengths, pwidth, filter = NULL, bin = 1,
-  binmethod = c("sum", "mean"))
+make_aligned_mats(data, pos, lengths, pwidth, filter = NULL,
+  binwidth = 1, binmethod = c("sum", "mean"))
 }
 \arguments{
 \item{data}{Names list of count matrices.}
@@ -18,7 +18,7 @@ make_aligned_mats(data, pos, lengths, pwidth, filter = NULL, bin = 1,
 
 \item{filter}{Genes to include. Defaults to all genes.}
 
-\item{bin}{Bin width, if binning is desired.}
+\item{binwidth}{Bin width, if binning is desired.}
 
 \item{binmethod}{Binning method. \code{sum}: Read counts within each bin are summed up; \code{mean}:
 Read counts are averaged.}

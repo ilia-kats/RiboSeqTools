@@ -80,13 +80,10 @@ load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude
     ret <- structure(ret, class="serp_data")
     if (normalize)
         ret <- normalize(ret)
+    defaults <- purrr::list_modify(.defaults, defaults)
 
-    if (is.null(defaults$bin)) {
-        if ('byaa' %in% bin)
-            autodefaults$bin <- 'byaa'
-        else
-            defaults$bin <- 'bynuc'
-    }
+    if (defaults$bin == 'byaa' && !('byaa' %in% bin))
+        defaults$bin <- 'bynuc'
     ret$defaults <- defaults
 
     ret
