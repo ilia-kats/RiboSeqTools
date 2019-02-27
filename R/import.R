@@ -4,7 +4,7 @@ load_experiment <- function(..., bin=c('bynuc', 'byaa'), exclude=NULL) {
         paths <- rlang::list2(...)
         ret <- sapply(paths, function(path) {
             ret <- list()
-            m = as.matrix(read.table(file.path(datadir, path) , fill=TRUE, header=TRUE, sep=",", row.names=1))
+            m = as.matrix(read.table(path , fill=TRUE, header=TRUE, sep=",", row.names=1))
             acols <- ncol(m) %% 3
             if (acols > 0) {
                 acols <- ncol(m):(ncol(m) - acols + 1)
@@ -28,7 +28,7 @@ load_experiment <- function(..., bin=c('bynuc', 'byaa'), exclude=NULL) {
         }, simplify=FALSE)
         ret
     },  ..., SIMPLIFY=FALSE)
-    names(ret) <- 1:length(path_ip)
+    names(ret) <- 1:unique(purrr::map_int(list(...), length))
     ret
 }
 
@@ -65,7 +65,7 @@ load_experiment <- function(..., bin=c('bynuc', 'byaa'), exclude=NULL) {
 load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude=NULL, defaults=list()) {
     experiments <- rlang::list2(...)
     stopifnot('gene' %in% colnames(ref) && 'length' %in% colnames(ref))
-    data <- sapply(experiments, load_experiment, bin=bin, exclude=exclude, simplify=FALSE)
+    data <- sapply(experiments, purrr::lift_dl(load_experiment), bin=bin, exclude=exclude, simplify=FALSE)
     what <- ifelse('bynuc' %in% bin, 'bynuc', 'byaa')
     total <- sapply(data, function(exp) {
         sapply(exp, function(rep) {
@@ -80,7 +80,7 @@ load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude
     ret <- structure(ret, class="serp_data")
     if (normalize)
         ret <- normalize(ret)
-    defaults <- purrr::list_modify(.defaults, defaults)
+    defaults <- purrr::list_modify(.defaults, !!!defaults)
 
     if (defaults$bin == 'byaa' && !('byaa' %in% bin))
         defaults$bin <- 'bynuc'

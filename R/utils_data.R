@@ -112,8 +112,7 @@ is_normalized <- function(data) {
 #' @export
 set_defaults <- function(data, ...) {
     check_serp_class(data)
-    pars <- rlang::list2(...)
-    data$defaults <- purrr::list_modify(data$defaults, pars)
+    data$defaults <- purrr::list_modify(data$defaults, ...)
     data
 }
 
