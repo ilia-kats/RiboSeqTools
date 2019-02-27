@@ -5,7 +5,8 @@
 \title{Align read count tables}
 \usage{
 make_aligned_mats(data, pos, lengths, pwidth, filter = NULL,
-  binwidth = 1, binmethod = c("sum", "mean"))
+  binwidth = 1, binmethod = c("sum", "mean"),
+  bpparam = BiocParallel::bpparam())
 }
 \arguments{
 \item{data}{Names list of count matrices.}

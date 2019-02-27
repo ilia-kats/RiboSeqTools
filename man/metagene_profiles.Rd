@@ -6,7 +6,8 @@
 \usage{
 metagene_profiles(data, profilefun, len, bin, filter = NULL,
   binwidth = 1, binmethod = c("sum", "mean"), normalizefun = NULL,
-  align = c("start", "stop"), nboot = 100)
+  align = c("start", "stop"), nboot = 100,
+  bpparam = BiocParallel::bpparam())
 }
 \arguments{
 \item{data}{A \code{serp_data} object}
@@ -36,6 +37,8 @@ this case, genes will be aligned to the given positions and the profile will be 
 \code{len} positions in either direction.}
 
 \item{nboot}{Number of bootstrap samples.}
+
+\item{bpparam}{A \code{\link[BiocParallel]{BiocParallelParam-class}} object.}
 }
 \description{
 Calculates a metagene profile from the full data set as well as bootstrapping samples (sampling genes).

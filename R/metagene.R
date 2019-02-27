@@ -9,7 +9,7 @@ align_stop <- function(d, lengths) {
     }, rownames(d), lengths[rownames(d)])), sparse=TRUE)
 }
 
-do_boot <- function(n, profilefun, mats, ...) {
+do_boot <- function(n, profilefun, mats, bpparam=BiocParallel::bpparam(), ...) {
     pars <- list(...)
     res <- BiocParallel::bpmapply(function(...) {
         nsample <- unique(sapply(mats, nrow))
@@ -17,7 +17,7 @@ do_boot <- function(n, profilefun, mats, ...) {
         s <- sample(nsample, nsample, replace=TRUE)
         m <- lapply(mats, function(x)x[s,,drop=FALSE])
         rlang::exec(profilefun, !!!m, !!!pars)
-    }, 1:n, SIMPLIFY=FALSE)
+    }, 1:n, SIMPLIFY=FALSE, BPPARAM=bpparam)
     if (all(sapply(res, is.list))) {
         res <- transpose(res)
         res <- lapply(res, function(x)rlang::exec(rbind, !!!x, deparse.level=0))
@@ -52,7 +52,7 @@ mat_to_df <- function(mat, boot) {
 #' @return Named list of matrices. Matrices are of width \eqn{2\cdot \text{pwidth} + 1}, with \code{pos} in
 #'      column \eqn{\text{pwidth} + 1}.
 #' @export
-make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, binwidth=1, binmethod=c('sum', 'mean')) {
+make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), bpparam=BiocParallel::bpparam()) {
     binmethod <- match.arg(binmethod)
     binmethod <- switch(binmethod, sum=sum, mean=mean)
     BiocParallel::bplapply(data, function(d) {
@@ -60,7 +60,7 @@ make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, binwidth=
         stopifnot(is.null(.filter) || length(.filter) == length(pos))
         if (is.null(.filter))
             .filter <- rownames(d)
-        .lengths <- lengths[filter];
+        .lengths <- lengths[.filter];
         t(mapply(function(g, p, l) {
             tlen <- 2 * pwidth + 1
             efflen <- ceiling(tlen / binwidth)
@@ -85,7 +85,7 @@ make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, binwidth=
             }
             out
         }, .filter, pos, .lengths))
-    })
+    }, BPPARAM=bpparam)
 }
 
 #' Calculate metagene profiles
@@ -121,8 +121,9 @@ make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, binwidth=
 #'      this case, genes will be aligned to the given positions and the profile will be centered at 0, spanning
 #'      \code{len} positions in either direction.
 #' @param nboot Number of bootstrap samples.
+#' @param bpparam A \code{\link[BiocParallel]{BiocParallelParam-class}} object.
 #' @export
-metagene_profiles <- function(data, profilefun, len, bin, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100) {
+metagene_profiles <- function(data, profilefun, len, bin, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, bpparam=BiocParallel::bpparam()) {
     check_serp_class(data)
     bin <- get_default_param(data, bin)
     binmethod <- match.arg(binmethod)
@@ -185,7 +186,7 @@ metagene_profiles <- function(data, profilefun, len, bin, filter=NULL, binwidth=
                 mats <- make_aligned_mats(mats, align, refs, len, binwidth=1, binmethod='sum')
             }
             all <- rlang::exec(profilefun, !!!mats, !!!pars)
-            boot <- rlang::exec(do_boot, n=nboot, profilefun=profilefun, mats=mats, !!!pars)
+            boot <- rlang::exec(do_boot, n=nboot, profilefun=profilefun, mats=mats, bpparam=bpparam, !!!pars)
 
             if (!is.list(all) && !is.list(boot)) {
                 all <- mat_to_df(all, FALSE)
