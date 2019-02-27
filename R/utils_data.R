@@ -9,7 +9,8 @@
 #' @rdname normalize
 #' @export
 normalize.serp_data <- function(data, exclude=c()) {
-    set_data(data, mapply(function(exp, texp) {
+    stopifnot(!is_normalized(data))
+    set_normalized(set_data(data, mapply(function(exp, texp) {
         mapply(function(rep, trep) {
             mapply(function(sample, tsample) {
                 sapply(sample, function(bin) {
@@ -19,7 +20,7 @@ normalize.serp_data <- function(data, exclude=c()) {
                 })
             }, rep, trep, SIMPLIFY=FALSE)
         }, exp, texp, SIMPLIFY=FALSE)
-    }, get_data(data), get_total(data), SIMPLIFY=FALSE))
+    }, get_data(data), get_total(data), SIMPLIFY=FALSE)), TRUE)
 }
 
 #' @export
@@ -66,6 +67,8 @@ get_elbow_threshold <- function(xvals, yvals) {
 #'          }
 #'      \item{get_total_counts}{Nested named list containing toal read counts for each sample.}
 #'      \item{get_defaults}{Named list of default parameters for this data set.}
+#'      \item{is_normalized}{A logical value indicating whether the data object contains raw or normalized
+#'          read counts.}
 #'      }
 #' @rdname serp_accessors
 #' @export
@@ -95,6 +98,13 @@ get_defaults <- function(data) {
     data$defaults
 }
 
+#' @rdname serp_accessors
+#' @export
+is_normalized <- function(data) {
+    check_serp_class(data)
+    data$normalized
+}
+
 #' Set default parameters of a \code{serp_data} object
 #'
 #' @param data A \code{serp_data} object.
@@ -110,5 +120,11 @@ set_defaults <- function(data, defaults) {
 set_data <- function(data, newdata) {
     check_serp_class(data)
     data$data <- newdata
+    data
+}
+
+set_normalized <- function(data, normalized) {
+    check_serp_class(data)
+    data$normalized <- normalized
     data
 }

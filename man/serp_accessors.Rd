@@ -5,6 +5,7 @@
 \alias{get_reference}
 \alias{get_total_counts}
 \alias{get_defaults}
+\alias{is_normalized}
 \title{Accessors for \code{serp_data} objects}
 \usage{
 get_data(data)
@@ -14,6 +15,8 @@ get_reference(data)
 get_total_counts(data)
 
 get_defaults(data)
+
+is_normalized(data)
 }
 \arguments{
 \item{data}{A \code{serp_data} object.}
@@ -31,6 +34,8 @@ get_defaults(data)
          }
      \item{get_total_counts}{Nested named list containing toal read counts for each sample.}
      \item{get_defaults}{Named list of default parameters for this data set.}
+     \item{is_normalized}{A logical value indicating whether the data object contains raw or normalized
+         read counts.}
      }
 }
 \description{

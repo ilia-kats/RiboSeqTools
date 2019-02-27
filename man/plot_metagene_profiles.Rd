@@ -6,7 +6,7 @@
 \usage{
 plot_metagene_profiles(df, exp = NULL, colaes = exp, align = "start",
   highlightregion = list(), highlightargs = list(),
-  conf.level = 0.95, ci.alpha = 0.3)
+  conf.level = 0.95, ci.alpha = 0.3, ylab = "enrichment")
 }
 \arguments{
 \item{df}{A data frame created by \code{\link{metagene_profiles}}.}

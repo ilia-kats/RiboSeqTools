@@ -61,6 +61,8 @@ binom_ci <- function(sample1, sample2, sample1_total, sample2_total, conf.level=
 #' @export
 binom_ci_profile <- function(data, gene, sample1, sample2, exp, rep, bin, window_size, conf.level=0.95) {
     check_serp_class(data)
+    stopifnot(!is_normalized(data))
+
     idx <- which(get_reference(data)$gene == gene)
     genelen <- get_reference(data)$length[idx]
     cdslen <- get_reference(data)$cds_length[idx]
@@ -161,6 +163,8 @@ annotate_profile <- function(highlightregion, ...) {
 #' @return A \code{\link[ggplot2]{ggplot}} object.
 #' @export
 plot.serp_data <- function(data, gene, sample1, sample2, exp, rep, bin, window_size, conf.level=0.95, colaes=exp, highlightregion=list(), highlightargs=list()) {
+    stopifnot(!is_normalized(data))
+
     bin <- get_default_param(data, bin)
     sample1 <- get_default_param(data, sample1)
     sample2 <- get_default_param(data, sample2)

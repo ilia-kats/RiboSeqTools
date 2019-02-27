@@ -232,7 +232,7 @@ metagene_profiles <- function(data, profilefun, len, filter=NULL, bin=1, binmeth
 #' @param ci.alpha Transparency level for the CI shading.
 #' @return A \code{\link[ggplot2]{ggplot}} object.
 #' @export
-plot_metagene_profiles <- function(df, exp=NULL, colaes=exp, align='start', highlightregion=list(), highlightargs=list(), conf.level=0.95, ci.alpha=0.3) {
+plot_metagene_profiles <- function(df, exp=NULL, colaes=exp, align='start', highlightregion=list(), highlightargs=list(), conf.level=0.95, ci.alpha=0.3, ylab='enrichment') {
     colaes <- enexpr(colaes)
     if (!is.null(exp))
         df <- filter(df, exp %in% !!exp)
@@ -241,7 +241,7 @@ plot_metagene_profiles <- function(df, exp=NULL, colaes=exp, align='start', high
         stat_summary(aes(color=NULL), data=function(x)filter(x, boot), geom='ribbon', fun.ymin=function(x)quantile(x, 0.5 * (1 - conf.level)), fun.ymax=function(x)quantile(x, 1 - 0.5 * (1 - conf.level)), alpha=ci.alpha) +
         geom_line(aes(y=counts), data=function(x)filter(x, !boot)) +
         scale_y_continuous(trans='log2') +
-        labs(x=sprintf('distance from %s / codons', align), y='enrichment') +
+        labs(x=sprintf('distance from %s / codons', align), y=ylab) +
         scale_x_continuous(expand=expand_scale()) +
         guides(fill=guide_legend(override.aes=list(alpha=1)), color=FALSE)
     p

@@ -76,7 +76,7 @@ load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude
     }, simplify=FALSE)
 
     ref$cds_length <- ref$length %/% 3
-    ret <- list(ref=ref, data=data, total=total)
+    ret <- list(ref=ref, data=data, total=total, normalized=FALSE)
     ret <- structure(ret, class="serp_data")
     if (normalize)
         ret <- normalize(ret)
