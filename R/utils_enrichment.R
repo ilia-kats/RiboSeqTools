@@ -63,32 +63,40 @@ binom_ci_profile <- function(data, gene, sample1, sample2, exp, rep, bin, window
     check_serp_class(data)
     stopifnot(!is_normalized(data))
 
+    if (missing(exp))
+        exp <- TRUE
+    if (missing(rep))
+        rep <- TRUE
+    binmissing <- missing(bin)
+
     idx <- which(get_reference(data)$gene == gene)
     genelen <- get_reference(data)$length[idx]
     cdslen <- get_reference(data)$cds_length[idx]
 
     df <- mapply(function(exp, nexp) {
         df <- mapply(function(rep, nrep) {
-            if (!missing(bin) && !(is.null(rep[[sample1]][[bin]]) || !is.null(rep[[sample2]][[bin]]))) {
+            if (!binmissing && !(is.null(rep[[sample1]][[bin]]) || !is.null(rep[[sample2]][[bin]]))) {
                 stop(sprintf("requested binning level not found for experiment %s replicate %s samples %s and %s", nexp, nrep, sample1, sample2))
             } else if (!is.null(rep[[sample1]]$byaa) && !is.null(rep[[sample2]]$byaa)) {
-                winsize <- window_size %/% 3
                 bin <- 'byaa'
-                len <- genelen
             } else if (!is.null(rep[[sample1]]$bynuc) && !is.null(rep[[sample2]]$bynuc)) {
-                winsize <- window_size
                 bin <- 'bynuc'
-                len <- cdslen
             } else {
                 stop(sprintf("binning does not match for experiment %s replicate %s samples %s and %s", nexp, nrep, sample1, sample2))
+            }
+            len <- genelen
+            winsize <- window_size
+            if (bin == 'byaa') {
+                len <- cdslen
+                winsize <- window_size %/% 3
             }
 
             s1_data <- rep[[sample1]][[bin]][gene, 1:len]
             s2_data <- rep[[sample2]][[bin]][gene, 1:len]
             win_s1 <- as.integer(round(convolve(s1_data, rep(1, winsize), type='open')[ceiling(winsize/2):(len+floor(winsize/2))]))
-            win_s2 <- s.integer(round(convolve(s2_data, rep(1, winsize), type='open')[ceiling(winsize/2):(len+floor(winsize/2))]))
+            win_s2 <- as.integer(round(convolve(s2_data, rep(1, winsize), type='open')[ceiling(winsize/2):(len+floor(winsize/2))]))
 
-            cidf <- binom_ci(win_s1, win_s2, get_total_counts(data)[[nexp]][[nrep]][[sample1]], get_total_counts(data)[[nexp]][[nrep]][[sample2]], conf.level=conf.level, bin=bin)
+            cidf <- binom_ci(win_s1, win_s2, get_total_counts(data)[[nexp]][[nrep]][[sample1]], get_total_counts(data)[[nexp]][[nrep]][[sample2]], conf.level=conf.level)
             tibble::tibble(winmid=1:len, !!sample1 := s1_data, !!sample2 := s2_data, !!paste0('win_', sample1) := win_s1, !!paste0('win_', sample2) := win_s2, ratio_mean = cidf$mean, lo_CI = cidf$lower, hi_CI = cidf$upper)
         }, exp[rep], names(exp[rep]), SIMPLIFY=FALSE)
         dplyr::bind_rows(df, .id='rep')
@@ -170,8 +178,8 @@ plot.serp_data <- function(data, gene, sample1, sample2, exp, rep, bin, window_s
     sample2 <- get_default_param(data, sample2)
     window_size <- get_default_param(data, window_size)
 
-    ylim <- get_default_param(plot_ylim)
-    ybreaks <- get_default_param(plot_ybreaks)
+    ylim <- get_default_param(data, plot_ylim)
+    ybreaks <- get_default_param(data, plot_ybreaks)
 
     colaes <- rlang::enexpr(colaes)
 
@@ -188,16 +196,16 @@ plot.serp_data <- function(data, gene, sample1, sample2, exp, rep, bin, window_s
                overlap=if_else(lo_CI - next.hi > 0, 1L, if_else(next.lo - hi_CI > 0, 2L, 0L)),
                overlap.xmin=xmax - (xmax - xmin) * 0.5,
                overlap.xmax=lead(xmin) + (lead(xmax) - lead(xmin)) * 0.5,
-               overlap.ymin=recode(overlap, `0`=NA_real_, `1`=next.hi, `2`=hi),
-               overlap.ymax=recode(overlap, `0`=NA_real_, `1`=lo, `2`=next.lo),
+               overlap.ymin=recode(overlap, `0`=NA_real_, `1`=next.hi, `2`=hi_CI),
+               overlap.ymax=recode(overlap, `0`=NA_real_, `1`=lo_CI, `2`=next.lo),
                mean_alpha=mean(c(alpha, lead(alpha)), na.rm=TRUE)) %>%
         dplyr::ungroup() %>%
-        ggplot2::ggplot(aes(fill=!!colaes)) +
+        ggplot2::ggplot(ggplot2::aes(fill=!!colaes)) +
             ggplot2::scale_y_continuous(trans="log2", limits=ylim, oob=scales::squish, expand=ggplot2::expand_scale(), breaks=ybreaks) +
             ggplot2::scale_x_continuous(expand=ggplot2::expand_scale()) +
             ggplot2::scale_alpha_continuous(trans="sqrt", breaks=c(1,3,10,30), limits=c(0,30), name="prec", range=c(0.02,1)) +
             rlang::exec(annotate_profile, highlightregion=highlightregion, !!!highlightargs) +
-            ggplot2::geom_rect(aes(xmin= xmin, xmax=xmax, ymin=lo, ymax=hi, alpha=alpha)) +
-            ggplot2::geom_rect(aes(xmin=overlap.xmin, xmax=overlap.xmax, ymin=overlap.ymin, ymax=overlap.ymax, alpha=mean_alpha), data=function(y)filter(y, overlap > 0, !is.na(overlap.xmax))) +
+            ggplot2::geom_rect(ggplot2::aes(xmin=xmin, xmax=xmax, ymin=lo_CI, ymax=hi_CI, alpha=alpha)) +
+            ggplot2::geom_rect(ggplot2::aes(xmin=overlap.xmin, xmax=overlap.xmax, ymin=overlap.ymin, ymax=overlap.ymax, alpha=mean_alpha), data=function(y)filter(y, overlap > 0, !is.na(overlap.xmax))) +
             ggplot2::labs(title=gene, x=sprintf("position / %s", xunit), y="enrichment")
 }

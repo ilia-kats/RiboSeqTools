@@ -1,6 +1,6 @@
 get_default_param <- function(serp_data, param, error=TRUE) {
     pname <- as.character(rlang::ensym(param))
-    if (missing(param)) {
+    if (missing(param) || !rlang::env_has(rlang::caller_env(), nms=pname, inherit=TRUE)) {
         param <- serp_data$defaults[[pname]]
     }
     if (is.null(param) && error)
