@@ -179,7 +179,7 @@ metagene_profiles <- function(data, profilefun, len, bin, filter=NULL, binwidth=
 
                 mats <- mapply(function(m, len) {
                     coords <- if (align == 'stop') (ncol(m) - len + 1):ncol(m) else 1:len
-                    m[,coords, drop=FALSE]
+                    as.matrix(m[,coords, drop=FALSE])
                 }, mats, len, SIMPLIFY=FALSE)
             } else {
                 mats <- make_aligned_mats(mats, align, refs, len, binwidth=1, binmethod='sum')
@@ -236,16 +236,16 @@ metagene_profiles <- function(data, profilefun, len, bin, filter=NULL, binwidth=
 #' @return A \code{\link[ggplot2]{ggplot}} object.
 #' @export
 plot_metagene_profiles <- function(df, ylab, exp=NULL, colaes=exp, align='start', highlightregion=list(), highlightargs=list(), conf.level=0.95, ci.alpha=0.3) {
-    colaes <- enexpr(colaes)
+    colaes <- rlang::enexpr(colaes)
     if (!is.null(exp))
-        df <- filter(df, exp %in% !!exp)
-    p <- ggplot(df, aes(pos, counts, fill=!!colaes, color=!!colaes, group=interaction(rep, !!colaes))) +
+        df <- dplyr::filter(df, exp %in% !!exp)
+    p <- ggplot2::ggplot(df, ggplot2::aes(pos, counts, fill=!!colaes, color=!!colaes, group=interaction(rep, !!colaes))) +
         annotate_profile(highlightregion, !!!highlightargs) +
-        stat_summary(aes(color=NULL), data=function(x)filter(x, boot), geom='ribbon', fun.ymin=function(x)quantile(x, 0.5 * (1 - conf.level)), fun.ymax=function(x)quantile(x, 1 - 0.5 * (1 - conf.level)), alpha=ci.alpha) +
-        geom_line(aes(y=counts), data=function(x)filter(x, !boot)) +
-        scale_y_continuous(trans='log2') +
-        labs(x=sprintf('distance from %s / codons', align), y=ylab) +
-        scale_x_continuous(expand=expand_scale()) +
-        guides(fill=guide_legend(override.aes=list(alpha=1)), color=FALSE)
+        ggplot2::stat_summary(ggplot2::aes(color=NULL), data=function(x)dplyr::filter(x, boot), geom='ribbon', fun.ymin=function(x)quantile(x, 0.5 * (1 - conf.level)), fun.ymax=function(x)quantile(x, 1 - 0.5 * (1 - conf.level)), alpha=ci.alpha) +
+        ggplot2::geom_line(ggplot2::aes(y=counts), data=function(x)dplyr::filter(x, !boot)) +
+        ggplot2::scale_y_continuous(trans='log2') +
+        ggplot2::labs(x=sprintf('distance from %s / codons', align), y=ylab) +
+        ggplot2::scale_x_continuous(expand=ggplot2::expand_scale()) +
+        ggplot2::guides(fill=ggplot2::guide_legend(override.aes=list(alpha=1)), color=FALSE)
     p
 }

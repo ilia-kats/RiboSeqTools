@@ -20,7 +20,7 @@ normalize.serp_data <- function(data, exclude=c()) {
                 })
             }, rep, trep, SIMPLIFY=FALSE)
         }, exp, texp, SIMPLIFY=FALSE)
-    }, get_data(data), get_total(data), SIMPLIFY=FALSE)), TRUE)
+    }, get_data(data), get_total_counts(data), SIMPLIFY=FALSE)), TRUE)
 }
 
 #' @export
