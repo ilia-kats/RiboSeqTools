@@ -37,6 +37,20 @@ mat_to_df <- function(mat, boot) {
     }
 }
 
+#' Align read count tables
+#'
+#' Centers each gene at a given position within the gene.
+#'
+#' @param data Names list of count matrices.
+#' @param pos Vector of positions.
+#' @param lengths Named vector of gene/ORF lengths.
+#' @param pwidth Width of the final matrices.
+#' @param filter Genes to include. Defaults to all genes.
+#' @param bin Bin width, if binning is desired.
+#' @param binmethod Binning method. \code{sum}: Read counts within each bin are summed up; \code{mean}:
+#'      Read counts are averaged.
+#' @return Named list of matrices. Matrices are of width \eqn{2\cdot \text{pwidth} + 1}, with \code{pos} in
+#'      column \eqn{\text{pwidth} + 1}.
 #' @export
 make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, bin=1, binmethod=c('sum', 'mean')) {
     binmethod <- match.arg(binmethod)
@@ -74,6 +88,38 @@ make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, bin=1, bi
     })
 }
 
+#' Calculate metagene profiles
+#'
+#' Calculates a metagene profile from the full data set as well as bootstrapping samples (sampling genes).
+#' Profiles are calculated separately for each experiment and replicate.
+#'
+#' Count matrices are first filtered to contain only genes in \code{filter}. They are then passed to
+#' \code{normalizefun} as named arguments, with names corresponding to sample type. If \code{align}
+#' is one of \code{start} or \code{stop}, normalized count matrices are first aligned, then binned
+#' and trimmed to \code{len} columns. If \code{align} is a vector of positions, count matrices are
+#' centered using \code{\link{make_aligned_mats}} without binning for performance reasons, binning
+#' is performed on the final profiles. The centered and trimmed count matrices are passed as named
+#' arguments to \code{profilefun}, which calculates the final profiles. \code{profilefun} can return
+#' either a single numeric vector, representing a single profile calculated from all count matrices,
+#' or a named list of numeric vectors.
+#'
+#' @param data A \code{serp_data} object
+#' @param profilefun Function that calculates a profile. Must accept named arguments for all sample types
+#'      present in the data set as well as \code{exp} (experiment name), \code{rep} (replicate name),
+#'      \code{bin} (bin width), \code{binmethod} (binning method), \code{align} (alignment). Must return
+#'      either a single numeric vector or a named list of numeric vectors.
+#' @param len Length of the profile.
+#' @param filter List of genes to include. Defaults to all genes.
+#' @param bin Bin width.
+#' @param binmethod How to bin the data. \code{sum}: Sums all read counts, \code{mean}: Averages read counts
+#' @param normalizefun Function that normalizes the data pefore binning and profile calculation. Must accept
+#'      the same arguments as \code{profilefun}. Must return a named list of matrices.
+#' @param align Alignment of the metagene profile, one of \code{start} (5' end) or \code{stop} (3' end).
+#'      Alternatively, a numeric vector of alignment positions for each gene in code{filter} can be given. In
+#'      this case, genes will be aligned to the given positions and the profile will be centered at 0, spanning
+#'      \code{len} positions in either direction.
+#' @param nboot Number of bootstrap samples.
+#' @param what Binning type to use, one of \code{byaa} or \code{bynuc}.
 #' @export
 metagene_profiles <- function(data, profilefun, len, filter=NULL, bin=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, what='byaa') {
     check_serp_class(data)
@@ -172,14 +218,27 @@ metagene_profiles <- function(data, profilefun, len, filter=NULL, bin=1, binmeth
     d
 }
 
+#' Plot metagene profiles
+#'
+#' Plots a metagene profile previously calculated with \code{\link{metagene_profiles}}. Lines show
+#' the real profile using all data, shading indicates a bootstrapping-based confdience interval.
+#'
+#' @param df A data frame created by \code{\link{metagene_profiles}}.
+#' @param exp Experiments to plot. Defaults to all experiments.
+#' @param colaes Variable to use for the color scale.
+#' @param align Alignment to use in X axis label.
+#' @template plot_annotations
+#' @param conf.level Confidence level to plot.
+#' @param ci.alpha Transparency level for the CI shading.
+#' @return A \code{\link[ggplot2]{ggplot}} object.
 #' @export
-plot_metagene_profiles <- function(df, exp=NULL, colaes=exp, align='start', highlightregion=list(), conf.level=0.95) {
+plot_metagene_profiles <- function(df, exp=NULL, colaes=exp, align='start', highlightregion=list(), highlightargs=list(), conf.level=0.95, ci.alpha=0.3) {
     colaes <- enexpr(colaes)
     if (!is.null(exp))
         df <- filter(df, exp %in% !!exp)
     p <- ggplot(df, aes(pos, counts, fill=!!colaes, color=!!colaes, group=interaction(rep, !!colaes))) +
-        annotate_profile(highlightregion) +
-        stat_summary(aes(color=NULL), data=function(x)filter(x, boot), geom='ribbon', fun.ymin=function(x)quantile(x, 0.5 * (1 - conf.level)), fun.ymax=function(x)quantile(x, 1 - 0.5 * (1 - conf.level)), alpha=0.2) +
+        annotate_profile(highlightregion, !!!highlightargs) +
+        stat_summary(aes(color=NULL), data=function(x)filter(x, boot), geom='ribbon', fun.ymin=function(x)quantile(x, 0.5 * (1 - conf.level)), fun.ymax=function(x)quantile(x, 1 - 0.5 * (1 - conf.level)), alpha=ci.alpha) +
         geom_line(aes(y=counts), data=function(x)filter(x, !boot)) +
         scale_y_continuous(trans='log2') +
         labs(x=sprintf('distance from %s / codons', align), y='enrichment') +

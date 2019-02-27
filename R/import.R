@@ -32,9 +32,39 @@ load_experiment <- function(..., bin=c('bynuc', 'byaa'), exclude=NULL) {
     ret
 }
 
+#' Import ribosome profiling data
+#'
+#' Import read count tables. Expects each count table to be a csv file with each row representing a different
+#' ORF and the first column containing the ORF names. Other columns represent positions from the 5' end of of
+#' the ORF in nucleotdes and must contain integer-valued read counts. A header must be present.
+#'
+#' @param ... Name-value pairs of lists. The name of each argument will be the name of an experiment.
+#'      The name of each element will be the sample type (e.g. TT for total translatome), the value
+#'      of each element must be a character vector of file paths, where each file is a read count
+#'      table of one replicate experiment. Replicate order must match between sample types.
+#' @param ref Reference data frame containing at least the following columns:
+#'      \describe{
+#'          \item{gene}{Gene/ORF name. Must match the names given in the read count tables.}
+#'          \item{length}{ORF length in nucleotides.}
+#'      }
+#' @param normalize Normalize the read counts to library size? Output will then be in RPM
+#' @param bin Bin the data. \code{bynuc}: No binning (i.e. counts per nucleotide). \code{byaa}: Bin by residue
+#' @param exclude Drop ORFs from the count tables
+#' @param defaults Default parameters of the data set TODO: document defaults
+#' @return An object of class \code{serp_data}
+#' @seealso serp_accessors
+#' @examples \dontrun{
+#'      data <- load_serp(DnaK=list(ip=c('data/dnak1_ip.csv', 'data/dnak2_ip.csv'),
+#'                                  tt=c('data/dnak1_tt.csv', 'data/dnak2_tt.csv')),
+#'                        TF=list(ip=c('datatf1_ip.csv', 'data/tf2_ip.csv'),
+#'                                tt=c('data/tf1_tt.csv', 'data/tf2_tt.csv')),
+#'                        ref=reference_df,
+#'                        bin='byaa')
+#'      }
 #' @export
 load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude=NULL, defaults=list()) {
     experiments <- rlang::list2(...)
+    stopifnot('gene' %in% colnames(ref) && 'length' %in% colnames(ref))
     data <- sapply(experiments, load_experiment, bin=bin, exclude=exclude, simplify=FALSE)
     what <- ifelse('bynuc' %in% bin, 'bynuc', 'byaa')
     total <- sapply(data, function(exp) {

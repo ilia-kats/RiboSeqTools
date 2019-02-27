@@ -1,6 +1,22 @@
+#' Treemap plot of read counts per gene with an additional grouping variable
+#'
+#' This function tries really hard to make sure that the ordering of class groups in the plot
+#' corresponds to the ordering of the factor levels. The treemap is plotted using \code{\link[treemap]{treemap}}.
+#'
+#' @param data A \code{serp_data} object.
+#' @param exp Experiment name.
+#' @param rep Replicate name.
+#' @param sample Sample type.
+#' @param geneclass Data frame with columns \code{gene} and \code{class}. \code{class} must be an
+#'      ordered factor.
+#' @param title Plot title.
+#' @param palette RColorBrewer palette to color-code the class variable
+#' @param exclude Character vector of genes to exclude from the plot
+#' @return An invisible list from \code{\link[treemap]{treemap}}
+#' @seealso \code{\link[treemap]{treemap}}
 #' @importFrom magrittr %$%
 #' @export
-plot_treemap <- function(data, exp, rep, sample, title, geneclass, palette="Set2", exclude=c()) {
+plot_treemap <- function(data, exp, rep, sample, geneclass, title='', palette="Set2", exclude=c()) {
     check_serp_class(data)
 
     if (ncol(geneclass) == 2 && !('class' %in% colnames(geneclass)) && 'gene' %in% colnames(geneclass))
