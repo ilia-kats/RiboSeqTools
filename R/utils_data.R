@@ -93,6 +93,16 @@ NULL
 NULL
 
 #' @export
+print.serp_data <- function(data) {
+    cat(sprintf('A ribosome profiling data set with %d experiments\n', length(get_data(data))))
+    cat(sprintf('Counts are normalized to library size: %s\n', ifelse(is_normalized(data), 'Yes', 'No')))
+    print_list_name("", " .", "", get_data(data))
+    cat('\n')
+    cat('Defaults:\n')
+    print(get_defaults(data))
+}
+
+#' @export
 get_data <- function(data) {
     UseMethod("get_data")
 }
