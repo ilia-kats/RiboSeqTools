@@ -26,7 +26,7 @@ plot_treemap <- function(data, exp, rep, sample, geneclass, title='', palette="S
         classes <- c(classes, 'unknown')
 
     reads_per_gene_sample <- tibble::enframe(Matrix::rowSums(get_data(data)[[exp]][[rep]][[sample]][[1]], na.rm=TRUE), name='gene', value='read_sum') %>%
-        dplyr::left_join(geneclass) %>%
+        dplyr::left_join(geneclass, by='gene') %>%
         tidyr::replace_na(list(class='unknown')) %>%
         dplyr::mutate(class=factor(class, classes, ordered=TRUE)) %>%
         dplyr::filter(!(gene %in% exclude))
