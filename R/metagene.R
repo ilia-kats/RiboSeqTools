@@ -29,9 +29,9 @@ do_boot <- function(n, profilefun, mats, bpparam=BiocParallel::bpparam(), ...) {
 
 mat_to_df <- function(mat, boot) {
     if (is.vector(mat)) {
-        tibble::tibble(id=1, pos=1:length(mat), counts=mat, boot=boot)
+        tibble::tibble(id=0, pos=1:length(mat), summary=mat, boot=boot)
     } else if (is.matrix(mat)) {
-        r <- tibble::as_tibble(reshape2::melt(mat, varnames=c('id', 'pos'), value.name='counts'))
+        r <- tibble::as_tibble(reshape2::melt(mat, varnames=c('id', 'pos'), value.name='summary'))
         r$boot <- boot
         r
     }
@@ -159,8 +159,8 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), fi
 
         # this is faster than binning in make_aligned_mats
         bm <- switch(binmethod, sum=sum, mean=mean)
-        d <- group_by_at(d, vars(-counts)) %>%
-            summarize(counts=bm(counts)) %>%
+        d <- group_by_at(d, vars(-summary)) %>%
+            summarize(summary=bm(summary)) %>%
             ungroup()
     }
     d
@@ -200,6 +200,16 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), fi
 #'      \code{len} positions in either direction.
 #' @param nboot Number of bootstrap samples.
 #' @param bpparam A \code{\link[BiocParallel]{BiocParallelParam-class}} object.
+#' @return A data frame with the following columns: \describe{
+#'      \item{id}{ID of the bootstrap sample}
+#'      \item{pos}{Distance from the \code{align} position. If \code{bin == 'byaa'} this is measured in codons,
+#'          otherwise in nucleotides.}
+#'      \item{boot}{Logical, indicates whether this profile was generated from a bootstrap sample or from the
+#'          complete data set.}
+#'      \item{type}{Only if \code{profilefun} returns a list. Corresponds to the name of the list element
+#'          containing the profile.}
+#'      \item{summary}{The value returned by \code{profilefun}.}
+#'}
 #' @seealso \link{defaults}
 #' @export
 metagene_profiles <- function(data, ...) {
@@ -286,10 +296,10 @@ plot_metagene_profiles <- function(df, ylab, exp=NULL, colaes=exp, align='start'
     colaes <- rlang::enexpr(colaes)
     if (!is.null(exp))
         df <- dplyr::filter(df, exp %in% !!exp)
-    p <- ggplot2::ggplot(df, ggplot2::aes(pos, counts, fill=!!colaes, color=!!colaes, group=interaction(rep, !!colaes))) +
+    p <- ggplot2::ggplot(df, ggplot2::aes(pos, summary, fill=!!colaes, color=!!colaes, group=interaction(rep, !!colaes))) +
         annotate_profile(highlightregion, !!!highlightargs) +
         ggplot2::stat_summary(ggplot2::aes(color=NULL), data=function(x)dplyr::filter(x, boot), geom='ribbon', fun.ymin=function(x)quantile(x, 0.5 * (1 - conf.level)), fun.ymax=function(x)quantile(x, 1 - 0.5 * (1 - conf.level)), alpha=ci.alpha) +
-        ggplot2::geom_line(ggplot2::aes(y=counts), data=function(x)dplyr::filter(x, !boot)) +
+        ggplot2::geom_line(ggplot2::aes(y=summary), data=function(x)dplyr::filter(x, !boot)) +
         ggplot2::scale_y_continuous(trans='log2') +
         ggplot2::labs(x=sprintf('distance from %s / codons', align), y=ylab) +
         ggplot2::scale_x_continuous(expand=ggplot2::expand_scale()) +

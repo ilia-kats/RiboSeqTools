@@ -49,6 +49,18 @@ this case, genes will be aligned to the given positions and the profile will be 
 
 \item{bpparam}{A \code{\link[BiocParallel]{BiocParallelParam-class}} object.}
 }
+\value{
+A data frame with the following columns: \describe{
+     \item{id}{ID of the bootstrap sample}
+     \item{pos}{Distance from the \code{align} position. If \code{bin == 'byaa'} this is measured in codons,
+         otherwise in nucleotides.}
+     \item{boot}{Logical, indicates whether this profile was generated from a bootstrap sample or from the
+         complete data set.}
+     \item{type}{Only if \code{profilefun} returns a list. Corresponds to the name of the list element
+         containing the profile.}
+     \item{summary}{The value returned by \code{profilefun}.}
+}
+}
 \description{
 Calculates a metagene profile from the full data set as well as bootstrapping samples (sampling genes).
 Profiles are calculated separately for each experiment and replicate.
