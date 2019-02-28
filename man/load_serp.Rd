@@ -25,7 +25,7 @@ table of one replicate experiment. Replicate order must match between sample typ
 
 \item{exclude}{Drop ORFs from the count tables}
 
-\item{defaults}{Default parameters of the data set TODO: document defaults}
+\item{defaults}{Default parameters of the data set.}
 }
 \value{
 An object of class \code{serp_data}
@@ -46,5 +46,5 @@ the ORF in nucleotdes and must contain integer-valued read counts. A header must
      }
 }
 \seealso{
-serp_accessors
+\link{serp_data_accessors}, \link{defaults}
 }

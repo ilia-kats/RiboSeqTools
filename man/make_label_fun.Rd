@@ -19,6 +19,6 @@ A function that takes a character vector of experiment IDs and returns a charact
 Create a mapping between experiment identifiers and names
 }
 \examples{
-     labelfun <- make_label_fun(id1='DnaK', id2='DnaK Δtig')
+     labelfun <- make_label_fun(id1='DnaK', id2='DnaK -tig')
      labelfun('id1')
 }

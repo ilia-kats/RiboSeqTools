@@ -50,9 +50,9 @@ load_experiment <- function(..., bin=c('bynuc', 'byaa'), exclude=NULL) {
 #' @param normalize Normalize the read counts to library size? Output will then be in RPM
 #' @param bin Bin the data. \code{bynuc}: No binning (i.e. counts per nucleotide). \code{byaa}: Bin by residue
 #' @param exclude Drop ORFs from the count tables
-#' @param defaults Default parameters of the data set TODO: document defaults
+#' @param defaults Default parameters of the data set.
 #' @return An object of class \code{serp_data}
-#' @seealso serp_accessors
+#' @seealso \link{serp_data_accessors}, \link{defaults}
 #' @examples \dontrun{
 #'      data <- load_serp(DnaK=list(ip=c('data/dnak1_ip.csv', 'data/dnak2_ip.csv'),
 #'                                  tt=c('data/dnak1_tt.csv', 'data/dnak2_tt.csv')),
@@ -65,6 +65,7 @@ load_experiment <- function(..., bin=c('bynuc', 'byaa'), exclude=NULL) {
 load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude=NULL, defaults=list()) {
     experiments <- rlang::list2(...)
     stopifnot('gene' %in% colnames(ref) && 'length' %in% colnames(ref))
+    bin <- match.arg(bin)
     data <- sapply(experiments, purrr::lift_dl(load_experiment), bin=bin, exclude=exclude, simplify=FALSE)
     what <- ifelse('bynuc' %in% bin, 'bynuc', 'byaa')
     total <- sapply(data, function(exp) {

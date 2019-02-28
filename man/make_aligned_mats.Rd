@@ -2,14 +2,14 @@
 % Please edit documentation in R/metagene.R
 \name{make_aligned_mats}
 \alias{make_aligned_mats}
-\title{Align read count tables}
+\title{Align data matrices}
 \usage{
 make_aligned_mats(data, pos, lengths, pwidth, filter = NULL,
   binwidth = 1, binmethod = c("sum", "mean"),
   bpparam = BiocParallel::bpparam())
 }
 \arguments{
-\item{data}{Names list of count matrices.}
+\item{data}{Names list of data matrices.}
 
 \item{pos}{Vector of positions.}
 
@@ -25,8 +25,8 @@ make_aligned_mats(data, pos, lengths, pwidth, filter = NULL,
 Read counts are averaged.}
 }
 \value{
-Named list of matrices. Matrices are of width \eqn{2\cdot \text{pwidth} + 1}, with \code{pos} in
-     column \eqn{\text{pwidth} + 1}.
+Named list of matrices. Matrices are of width \eqn{2\cdot \textrm{pwidth} + 1}, with \code{pos} in
+     column \eqn{\textrm{pwidth} + 1}.
 }
 \description{
 Centers each gene at a given position within the gene.

@@ -24,10 +24,11 @@ and upper bounds of the confidence interval
 }
 \description{
 Given total read counts in two samples, calculates library size-normalized confidence intervals
-for the ratio \eqn{\frac{sample1}{sample2}}.
+for the ratio \eqn{\frac{\textrm{sample1}}{\textrm{sample2}}}{sample1/sample2}.
 }
 \details{
 Uses the Agresti-Coull approximation to calculate binomial confidence intervals of
-\eqn{\frac{sample1}{sample1 + sample2}}. These values are then converted to CIs of
-\eqn{\frac{sample1}{sample2}} and normalized for library size.
+\eqn{\frac{\textrm{sample1}}{\textrm{sample1} + \textrm{sample2}}}{sample1/(sample1 + sample2)}.
+These values are then converted to CIs of \eqn{\frac{\textrm{sample1}}{\textrm{sample2}}}{sample1/sample2}
+and normalized for library size.
 }

@@ -3,11 +3,12 @@ prob2odds <- function(p) p / (1 - p)
 #' Calculate enrichment confidence interval.
 #'
 #' Given total read counts in two samples, calculates library size-normalized confidence intervals
-#' for the ratio \eqn{\frac{sample1}{sample2}}.
+#' for the ratio \eqn{\frac{\textrm{sample1}}{\textrm{sample2}}}{sample1/sample2}.
 #'
 #' Uses the Agresti-Coull approximation to calculate binomial confidence intervals of
-#' \eqn{\frac{sample1}{sample1 + sample2}}. These values are then converted to CIs of
-#' \eqn{\frac{sample1}{sample2}} and normalized for library size.
+#' \eqn{\frac{\textrm{sample1}}{\textrm{sample1} + \textrm{sample2}}}{sample1/(sample1 + sample2)}.
+#' These values are then converted to CIs of \eqn{\frac{\textrm{sample1}}{\textrm{sample2}}}{sample1/sample2}
+#' and normalized for library size.
 #'
 #' @param sample1 Read counts in sample1.
 #' @param sample2 Read counts in sample2.
@@ -31,7 +32,7 @@ binom_ci <- function(sample1, sample2, sample1_total, sample2_total, conf.level=
 #' For a given gene, confidence intervals of enrichment (read count ratio) are calculated for each position.
 #'
 #' At each position within the gene, read counts within a \code{window_size}-wide neighborhood are summed up
-#' and used for CI calculation. A confidence interval for the ratio \eqn{\frac{sample1}{sample2}}
+#' and used for CI calculation. A confidence interval for the ratio \eqn{\frac{\textrm{sample1}}{\textrm{sample2}}}{sample1/sample2}
 #' is calculated using \link{binom_ci}.
 #'
 #' @param data A \code{serp_data} object.
@@ -112,7 +113,7 @@ binom_ci_profile <- function(data, gene, sample1, sample2, exp, rep, bin, window
 #'      of experiment names. This function can be used e.g. as labeller in \code{\link[ggplot2]{facet_wrap}}
 #'      and\code{\link[ggplot2]{facet_grid}}
 #' @examples
-#'      labelfun <- make_label_fun(id1='DnaK', id2='DnaK Δtig')
+#'      labelfun <- make_label_fun(id1='DnaK', id2='DnaK -tig')
 #'      labelfun('id1')
 #' @export
 make_label_fun <- function(...) {
@@ -156,19 +157,20 @@ annotate_profile <- function(highlightregion, ...) {
 #' @param data A \code{serp_data} object. Must contain raw (unnormalized) read counts.
 #' @param gene Name of the gene/ORF to plot.
 #' @param sample1 Name of the first sample (the numerator). If missing, the default sample1 of the data set
-#'      will be used (TODO: document defaults)
+#'      will be used
 #' @param sample2 Name of the second sample (the denominator). If missing, the default sample2 of the data set
-#'      will be used (TODO: document defaults)
+#'      will be used
 #' @param exp Character vector of experiments to plot. If missing, all experiments are plotted.
 #' @param rep Character vector of replicates to plot. If missing, all replicates will be plotted.
 #' @param bin Bin level (\code{bynuc} or \code{byaa}). If missing, the default binning level of the data set
-#'      will be used (TODO: document defaults)
+#'      will be used
 #' @param window_size Window size for the confidence interval calculation. If missing, the default window size
-#'      of the data set will be used (TODO: document defaults)
+#'      of the data set will be used
 #' @param conf.level Confidence level.
 #' @param colaes Variable to use for the color scale.
 #' @template plot_annotations
 #' @return A \code{\link[ggplot2]{ggplot}} object.
+#' @seealso \link{defaults}
 #' @export
 plot.serp_data <- function(data, gene, sample1, sample2, exp, rep, bin, window_size, conf.level=0.95, colaes=exp, highlightregion=list(), highlightargs=list()) {
     stopifnot(!is_normalized(data))

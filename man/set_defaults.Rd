@@ -2,15 +2,21 @@
 % Please edit documentation in R/utils_data.R
 \name{set_defaults}
 \alias{set_defaults}
-\title{Set default parameters of a \code{serp_data} object}
+\alias{set_defaults.serp_data}
+\alias{set_defaults.serp_features}
+\title{Set default parameters}
 \usage{
 set_defaults(data, ...)
+
+\method{set_defaults}{serp_data}(data, ...)
+
+\method{set_defaults}{serp_features}(data, ...)
 }
 \arguments{
-\item{data}{A \code{serp_data} object.}
+\item{data}{The data}
 
 \item{...}{Name-value-pairs of parameters}
 }
 \description{
-Set default parameters of a \code{serp_data} object
+Set default parameters
 }

@@ -2,15 +2,24 @@
 % Please edit documentation in R/metagene.R
 \name{metagene_profiles}
 \alias{metagene_profiles}
+\alias{metagene_profiles.serp_data}
+\alias{metagene_profiles.serp_features}
 \title{Calculate metagene profiles}
 \usage{
-metagene_profiles(data, profilefun, len, bin, filter = NULL,
-  binwidth = 1, binmethod = c("sum", "mean"), normalizefun = NULL,
-  align = c("start", "stop"), nboot = 100,
+metagene_profiles(data, ...)
+
+\method{metagene_profiles}{serp_data}(data, profilefun, len, bin,
+  filter = NULL, binwidth = 1, binmethod = c("sum", "mean"),
+  normalizefun = NULL, align = c("start", "stop"), nboot = 100,
+  bpparam = BiocParallel::bpparam())
+
+\method{metagene_profiles}{serp_features}(data, profilefun, len, bin,
+  filter = NULL, binwidth = 1, binmethod = c("sum", "mean"),
+  normalizefun = NULL, align = c("start", "stop"), nboot = 100,
   bpparam = BiocParallel::bpparam())
 }
 \arguments{
-\item{data}{A \code{serp_data} object}
+\item{data}{The data.}
 
 \item{profilefun}{Function that calculates a profile. Must accept named arguments for all sample types
 present in the data set as well as \code{exp} (experiment name), \code{rep} (replicate name),
@@ -20,7 +29,7 @@ either a single numeric vector or a named list of numeric vectors.}
 \item{len}{Length of the profile.}
 
 \item{bin}{Bin level (\code{bynuc} or \code{byaa}). If missing, the default binning level of the data set
-will be used (TODO: document defaults)}
+will be used}
 
 \item{filter}{List of genes to include. Defaults to all genes.}
 
@@ -45,13 +54,16 @@ Calculates a metagene profile from the full data set as well as bootstrapping sa
 Profiles are calculated separately for each experiment and replicate.
 }
 \details{
-Count matrices are first filtered to contain only genes in \code{filter}. They are then passed to
+Data matrices are first filtered to contain only genes in \code{filter}. They are then passed to
 \code{normalizefun} as named arguments, with names corresponding to sample type. If \code{align}
-is one of \code{start} or \code{stop}, normalized count matrices are first aligned, then binned
-and trimmed to \code{len} columns. If \code{align} is a vector of positions, count matrices are
+is one of \code{start} or \code{stop}, normalized data matrices are first aligned, then binned
+and trimmed to \code{len} columns. If \code{align} is a vector of positions, data matrices are
 centered using \code{\link{make_aligned_mats}} without binning for performance reasons, binning
-is performed on the final profiles. The centered and trimmed count matrices are passed as named
+is performed on the final profiles. The centered and trimmed data matrices are passed as named
 arguments to \code{profilefun}, which calculates the final profiles. \code{profilefun} can return
-either a single numeric vector, representing a single profile calculated from all count matrices,
+either a single numeric vector, representing a single profile calculated from all data matrices,
 or a named list of numeric vectors.
+}
+\seealso{
+\link{defaults}
 }

@@ -70,48 +70,120 @@ get_elbow_threshold <- function(xvals, yvals) {
 #'      \item{is_normalized}{A logical value indicating whether the data object contains raw or normalized
 #'          read counts.}
 #'      }
-#' @rdname serp_accessors
+#' @rdname serp_data_accessors
+#' @name serp_data_accessors
+NULL
+
+#' Accessors for \code{serp_features} objects
+#'
+#' @param data A \code{serp_features} object.
+#' @return \describe{
+#'      \item{get_data}{Nested named list, with first level representing the feature type and second level
+#'          the binning. Data tables are matrices with each row corresponding to an ORF.}
+#'      \item{get_reference}{Reference data frame. Guaranteed to contain at least the following columns:
+#'          \describe{
+#'              \item{gene}{Gene/ORF name. Must match the names given in the read count tables.}
+#'              \item{length}{ORF length in nucleotides.}
+#'              \item{cds_length}{ORF length in codons.}}
+#'          }
+#'      \item{get_defaults}{Named list of default parameters for this feature set.}
+#'      }
+#' @rdname serp_feature_accessors
+#' @name serp_feature_accessors
+NULL
+
 #' @export
 get_data <- function(data) {
-    check_serp_class(data)
+    UseMethod("get_data")
+}
+
+#' @rdname serp_data_accessors
+#' @export
+get_data.serp_data <- function(data) {
     data$data
 }
 
-#' @rdname serp_accessors
+#' @rdname serp_feature_accessors
+#' @export
+get_data.serp_features <- function(data) {
+    data$data
+}
+
 #' @export
 get_reference <- function(data) {
-    check_serp_class(data)
+    UseMethod("get_reference")
+}
+
+#' @rdname serp_data_accessors
+#' @export
+get_reference.serp_data <- function(data) {
     data$ref
 }
 
-#' @rdname serp_accessors
+#' @rdname serp_feature_accessors
+#' @export
+get_reference.serp_features <- function(data) {
+    data$ref
+}
+
 #' @export
 get_total_counts <- function(data) {
-    check_serp_class(data)
+    UseMethod("get_total_counts")
+}
+
+#' @rdname serp_data_accessors
+#' @export
+get_total_counts.serp_data <- function(data) {
     data$total
 }
 
-#' @rdname serp_accessors
 #' @export
 get_defaults <- function(data) {
-    check_serp_class(data)
+    UseMethod("get_defaults")
+}
+
+#' @rdname serp_data_accessors
+#' @export
+get_defaults.serp_data <- function(data) {
     data$defaults
 }
 
-#' @rdname serp_accessors
+#' @rdname serp_feature_accessors
+#' @export
+get_defaults.serp_features <- function(data) {
+    data$defaults
+}
+
 #' @export
 is_normalized <- function(data) {
-    check_serp_class(data)
+    UseMethod("is_normalized")
+}
+
+#' @rdname serp_data_accessors
+#' @export
+is_normalized.serp_data <- function(data) {
     data$normalized
 }
 
-#' Set default parameters of a \code{serp_data} object
+#' Set default parameters
 #'
-#' @param data A \code{serp_data} object.
+#' @param data The data
 #' @param ... Name-value-pairs of parameters
 #' @export
 set_defaults <- function(data, ...) {
-    check_serp_class(data)
+    UseMethod("set_defaults")
+}
+
+#' @rdname set_defaults
+#' @export
+set_defaults.serp_data <- function(data, ...) {
+    data$defaults <- purrr::list_modify(data$defaults, ...)
+    data
+}
+
+#' @rdname set_defaults
+#' @export
+set_defaults.serp_features <- function(data, ...) {
     data$defaults <- purrr::list_modify(data$defaults, ...)
     data
 }

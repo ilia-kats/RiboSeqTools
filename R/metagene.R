@@ -10,7 +10,7 @@ align_stop <- function(d, lengths) {
 }
 
 do_boot <- function(n, profilefun, mats, bpparam=BiocParallel::bpparam(), ...) {
-    pars <- list(...)
+    pars <- rlang::list2(...)
     res <- BiocParallel::bpmapply(function(...) {
         nsample <- unique(sapply(mats, nrow))
         stopifnot(length(nsample) == 1)
@@ -37,11 +37,11 @@ mat_to_df <- function(mat, boot) {
     }
 }
 
-#' Align read count tables
+#' Align data matrices
 #'
 #' Centers each gene at a given position within the gene.
 #'
-#' @param data Names list of count matrices.
+#' @param data Names list of data matrices.
 #' @param pos Vector of positions.
 #' @param lengths Named vector of gene/ORF lengths.
 #' @param pwidth Width of the final matrices.
@@ -49,8 +49,8 @@ mat_to_df <- function(mat, boot) {
 #' @param binwidth Bin width, if binning is desired.
 #' @param binmethod Binning method. \code{sum}: Read counts within each bin are summed up; \code{mean}:
 #'      Read counts are averaged.
-#' @return Named list of matrices. Matrices are of width \eqn{2\cdot \text{pwidth} + 1}, with \code{pos} in
-#'      column \eqn{\text{pwidth} + 1}.
+#' @return Named list of matrices. Matrices are of width \eqn{2\cdot \textrm{pwidth} + 1}, with \code{pos} in
+#'      column \eqn{\textrm{pwidth} + 1}.
 #' @export
 make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), bpparam=BiocParallel::bpparam()) {
     binmethod <- match.arg(binmethod)
@@ -88,29 +88,107 @@ make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, binwidth=
     }, BPPARAM=bpparam)
 }
 
+metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, bpparam=BiocParallel::bpparam()) {
+    mats <- lapply(d, function(m) {
+        m <- m[[bin]]
+        cfilter <- if(is.null(filter)) TRUE else filter[filter %in% rownames(m)]
+        m[cfilter,, drop=FALSE]
+    })
+    pars <- list(binwidth=binwidth, binmethod=binmethod, align=align)
+
+    if (!is.null(normalizefun)) {
+        mats <- rlang::exec(normalizefun, !!!mats, !!!extrapars, !!!pars)
+    }
+
+    if (length(align) == 1 && align %in% c('start', 'stop')) {
+        if (align == 'stop')
+            mats <- lapply(mats, align_stop, refs)
+
+        len <- sapply(mats, function(m)min(ncol(m), len))
+
+        if (binwidth > 1) {
+            rval <- ifelse(binmethod == 'mean', 1 / binwidth, 1)
+            if (length(unique(sapply(mats, ncol))) == 1) {
+                len <- ceiling(len[1] / binwidth)
+
+                r <- rep(c(rep(rval, binwidth), rep(0, ncol(mats[[1]]))), length.out=ncol(mats[[1]]) * len)
+                if (align == 'stop')
+                    r <- rev(r)
+                r <- matrix(r, ncol=len, byrow=FALSE)
+                mats <- lapply(mats, function(m) tidyr::replace_na(m, 0) %*% r)
+            } else {
+                mats <- mapply(function(m, l) {
+                    len <- ceiling(l / binwidth)
+
+                    r <- rep(c(rep(rval, binwidth), rep(0, ncol(m))), length.out=ncol(m) * len)
+                    if (align == 'stop')
+                        r <- rev(r)
+                    tidyr::replace_na(m, 0) %*% matrix(r, ncol=len, byrow=FALSE)
+                }, mats, len, SIMPLIFY=FALSE)
+            }
+        }
+
+        mats <- mapply(function(m, len) {
+            coords <- if (align == 'stop') (ncol(m) - len + 1):ncol(m) else 1:len
+            as.matrix(m[,coords, drop=FALSE])
+        }, mats, len, SIMPLIFY=FALSE)
+    } else {
+        mats <- make_aligned_mats(mats, align, refs, len, binwidth=1, binmethod='sum')
+    }
+    all <- rlang::exec(profilefun, !!!mats, !!!extrapars, !!!pars)
+    boot <- rlang::exec(do_boot, n=nboot, profilefun=profilefun, mats=mats, bpparam=bpparam, !!!extrapars, !!!pars)
+
+    if (!is.list(all) && !is.list(boot)) {
+        all <- mat_to_df(all, FALSE)
+        boot <- mat_to_df(boot, TRUE)
+    } else {
+        all <- lapply(all, mat_to_df, FALSE)
+        boot <- lapply(boot, mat_to_df, TRUE)
+
+        all <- bind_rows(all, .id='type')
+        boot <- bind_rows(boot, .id='type')
+    }
+    d <- bind_rows(all, boot)
+    d$pos <- d$pos - 1
+    if (length(align) == 1 && align %in% c('start', 'stop')) {
+        if (align == 'stop')
+            d$pos <- d$pos - (len - 1)
+        d$pos <- d$pos * binwidth
+    } else {
+        d$pos <- (d$pos - len) %/% binwidth * binwidth
+
+        # this is faster than binning in make_aligned_mats
+        bm <- switch(binmethod, sum=sum, mean=mean)
+        d <- group_by_at(d, vars(-counts)) %>%
+            summarize(counts=bm(counts)) %>%
+            ungroup()
+    }
+    d
+}
+
 #' Calculate metagene profiles
 #'
 #' Calculates a metagene profile from the full data set as well as bootstrapping samples (sampling genes).
 #' Profiles are calculated separately for each experiment and replicate.
 #'
-#' Count matrices are first filtered to contain only genes in \code{filter}. They are then passed to
+#' Data matrices are first filtered to contain only genes in \code{filter}. They are then passed to
 #' \code{normalizefun} as named arguments, with names corresponding to sample type. If \code{align}
-#' is one of \code{start} or \code{stop}, normalized count matrices are first aligned, then binned
-#' and trimmed to \code{len} columns. If \code{align} is a vector of positions, count matrices are
+#' is one of \code{start} or \code{stop}, normalized data matrices are first aligned, then binned
+#' and trimmed to \code{len} columns. If \code{align} is a vector of positions, data matrices are
 #' centered using \code{\link{make_aligned_mats}} without binning for performance reasons, binning
-#' is performed on the final profiles. The centered and trimmed count matrices are passed as named
+#' is performed on the final profiles. The centered and trimmed data matrices are passed as named
 #' arguments to \code{profilefun}, which calculates the final profiles. \code{profilefun} can return
-#' either a single numeric vector, representing a single profile calculated from all count matrices,
+#' either a single numeric vector, representing a single profile calculated from all data matrices,
 #' or a named list of numeric vectors.
 #'
-#' @param data A \code{serp_data} object
+#' @param data The data.
 #' @param profilefun Function that calculates a profile. Must accept named arguments for all sample types
 #'      present in the data set as well as \code{exp} (experiment name), \code{rep} (replicate name),
 #'      \code{binwidth} (bin width), \code{binmethod} (binning method), \code{align} (alignment). Must return
 #'      either a single numeric vector or a named list of numeric vectors.
 #' @param len Length of the profile.
 #' @param bin Bin level (\code{bynuc} or \code{byaa}). If missing, the default binning level of the data set
-#'      will be used (TODO: document defaults)
+#'      will be used
 #' @param filter List of genes to include. Defaults to all genes.
 #' @param binwidth Bin width.
 #' @param binmethod How to bin the data. \code{sum}: Sums all read counts, \code{mean}: Averages read counts
@@ -122,9 +200,15 @@ make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, binwidth=
 #'      \code{len} positions in either direction.
 #' @param nboot Number of bootstrap samples.
 #' @param bpparam A \code{\link[BiocParallel]{BiocParallelParam-class}} object.
+#' @seealso \link{defaults}
 #' @export
-metagene_profiles <- function(data, profilefun, len, bin, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, bpparam=BiocParallel::bpparam()) {
-    check_serp_class(data)
+metagene_profiles <- function(data, ...) {
+    UseMethod("metagene_profiles")
+}
+
+#' @rdname metagene_profiles
+#' @export
+metagene_profiles.serp_data <- function(data, profilefun, len, bin, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, bpparam=BiocParallel::bpparam()) {
     bin <- get_default_param(data, bin)
     binmethod <- match.arg(binmethod)
     refs <- setNames(get_reference(data)$length, get_reference(data)$gene)
@@ -132,93 +216,55 @@ metagene_profiles <- function(data, profilefun, len, bin, filter=NULL, binwidth=
         refs <- refs / 3
     d <- mapply(function(d, exp) {
         ret <- mapply(function(d, rep) {
-            .filter <- filter
-            if (is.list(.filter)) {
-                .filter <- .filter[[exp]]
-                if (is.list(.filter))
-                    .filter <- .filter[[rep]]
-            }
-
-            mats <- lapply(d, function(m) {
-                m <- m[[bin]]
-                cfilter <- if(is.null(.filter)) TRUE else .filter[.filter %in% rownames(m)]
-                m[cfilter,, drop=FALSE]
-            })
-            pars <- list(exp=exp, rep=rep, binwidth=binwidth, binmethod=binmethod, align=align)
-
-            if (!is.null(normalizefun)) {
-                mats <- rlang::exec(normalizefun, !!!mats, !!!pars)
-            }
-
-            if (length(align) == 1 && align %in% c('start', 'stop')) {
-                if (align == 'stop')
-                    mats <- lapply(mats, align_stop, refs)
-
-                len <- sapply(mats, function(m)min(ncol(m), len))
-
-                if (binwidth > 1) {
-                    rval <- ifelse(binmethod == 'mean', 1 / binwidth, 1)
-                    if (length(unique(sapply(mats, ncol))) == 1) {
-                        len <- ceiling(len[1] / binwidth)
-
-                        r <- rep(c(rep(rval, binwidth), rep(0, ncol(mats[[1]]))), length.out=ncol(mats[[1]]) * len)
-                        if (align == 'stop')
-                            r <- rev(r)
-                        r <- matrix(r, ncol=len, byrow=FALSE)
-                        mats <- lapply(mats, function(m) tidyr::replace_na(m, 0) %*% r)
-                    } else {
-                        mats <- mapply(function(m, l) {
-                            len <- ceiling(l / binwidth)
-
-                            r <- rep(c(rep(rval, binwidth), rep(0, ncol(m))), length.out=ncol(m) * len)
-                            if (align == 'stop')
-                                r <- rev(r)
-                            tidyr::replace_na(m, 0) %*% matrix(r, ncol=len, byrow=FALSE)
-                        }, mats, len, SIMPLIFY=FALSE)
-                    }
-                }
-
-                mats <- mapply(function(m, len) {
-                    coords <- if (align == 'stop') (ncol(m) - len + 1):ncol(m) else 1:len
-                    as.matrix(m[,coords, drop=FALSE])
-                }, mats, len, SIMPLIFY=FALSE)
-            } else {
-                mats <- make_aligned_mats(mats, align, refs, len, binwidth=1, binmethod='sum')
-            }
-            all <- rlang::exec(profilefun, !!!mats, !!!pars)
-            boot <- rlang::exec(do_boot, n=nboot, profilefun=profilefun, mats=mats, bpparam=bpparam, !!!pars)
-
-            if (!is.list(all) && !is.list(boot)) {
-                all <- mat_to_df(all, FALSE)
-                boot <- mat_to_df(boot, TRUE)
-            } else {
-                all <- lapply(all, mat_to_df, FALSE)
-                boot <- lapply(boot, mat_to_df, TRUE)
-
-                all <- bind_rows(all, .id='type')
-                boot <- bind_rows(boot, .id='type')
-            }
-            d <- bind_rows(all, boot)
-            d$pos <- d$pos - 1
-            if (length(align) == 1 && align %in% c('start', 'stop')) {
-                if (align == 'stop')
-                    d$pos <- d$pos - (len - 1)
-                d$pos <- d$pos * binwidth
-            } else {
-                d$pos <- (d$pos - len) %/% binwidth * binwidth
-
-                # this is faster than binning in make_aligned_mats
-                bm <- switch(binmethod, sum=sum, mean=mean)
-                d <- group_by_at(d, vars(-counts)) %>%
-                    summarize(counts=bm(counts)) %>%
-                    ungroup()
-            }
-            d
-        }, d, if(!is.null(names(d))) names(d) else 1:length(d), SIMPLIFY=FALSE)
+                        .filter <- filter
+                        if (is.list(.filter)) {
+                            .filter <- .filter[[exp]]
+                            if (is.list(.filter))
+                            .filter <- .filter[[rep]]
+                        }
+                        metagene_profile(d,
+                                         profilefun,
+                                         len,
+                                         bin,
+                                         refs,
+                                         extrapars=list(exp=exp, rep=rep),
+                                         filter=.filter,
+                                         binwidth=binwidth,
+                                         binmethod=binmethod,
+                                         normalizefun=normalizefun,
+                                         align=align,
+                                         nboot=nboot,
+                                         bpparam=bpparam)
+                    },
+                    d,
+                    if(!is.null(names(d))) names(d) else 1:length(d),
+                    SIMPLIFY=FALSE)
         bind_rows(ret, .id='rep')
     }, get_data(data), names(get_data(data)), SIMPLIFY=FALSE)
     d <- mutate(bind_rows(d, .id='exp'), id=as.factor(id))
     d
+}
+
+#' @rdname metagene_profiles
+#' @export
+metagene_profiles.serp_features <- function(data, profilefun, len, bin, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, bpparam=BiocParallel::bpparam()) {
+    bin <- get_default_param(data, bin)
+    binmethod <- match.arg(binmethod)
+    refs <- setNames(get_reference(data)$length, get_reference(data)$gene)
+    if (bin == 'byaa')
+        refs <- refs / 3
+    metagene_profile(d,
+                     profilefun,
+                     len,
+                     bin,
+                     refs,
+                     filter=.filter,
+                     binwidth=binwidth,
+                     binmethod=binmethod,
+                     normalizefun=normalizefun,
+                     align=align,
+                     nboot=nboot,
+                     bpparam=bpparam)
 }
 
 #' Plot metagene profiles
