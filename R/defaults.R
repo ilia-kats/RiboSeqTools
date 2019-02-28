@@ -24,7 +24,10 @@ get_default_param <- function(serp_data, param, error=TRUE) {
 #'      \item{sample2}{Sample to use in the denumerator of enrichment calculations.}
 #'      \item{window_size}{Neighborhood size to use in enrichment CI calculations.}
 #'      \item{plot_ylim}{Y axis limit for \link[=plot.serp_data]{enrichment plots}.}
-#'      \item{plot_ybreaks}{Y axis breaks for \link[=plot.serp-data]{enrichment plots}.}
+#'      \item{plot_ybreaks}{Y axis breaks for \link[=plot.serp_data]{enrichment plots}.}
+#'      \item{plot_fill_scale}{A \link[ggplot2:scale_fill_discrete]{ggplot2 fill scale} to use for
+#'          \link[=plot.serp_data]{enrichment plots}. If this is a \link[ggplot2:scale_fill_manual]{manual scale},
+#'          value names must correspond to experiment names.}
 #' }
 #'
 #' @name defaults

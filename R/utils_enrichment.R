@@ -188,8 +188,9 @@ plot.serp_data <- function(data, gene, sample1, sample2, exp, rep, bin, window_s
     df <- binom_ci_profile(data, gene, sample1, sample2, exp, rep, bin, window_size=window_size, conf.level=conf.level)
 
     xunit <- ifelse(bin == 'byaa', 'codons', 'nucleotides')
+    fillscale <- get_default_param(data, plot_fill_scale, error=FALSE)
 
-    dplyr::group_by(df, rep, exp) %>%
+    p <- dplyr::group_by(df, rep, exp) %>%
         dplyr::mutate(xmin= (winmid - 0.5) ,
                xmax=(winmid + 0.5),
                alpha=1/((1/!!rlang::sym(paste0('win_', sample1)) + 1/!!rlang::sym(paste0('win_', sample2))) * window_size),
@@ -210,4 +211,8 @@ plot.serp_data <- function(data, gene, sample1, sample2, exp, rep, bin, window_s
             ggplot2::geom_rect(ggplot2::aes(xmin=xmin, xmax=xmax, ymin=lo_CI, ymax=hi_CI, alpha=alpha)) +
             ggplot2::geom_rect(ggplot2::aes(xmin=overlap.xmin, xmax=overlap.xmax, ymin=overlap.ymin, ymax=overlap.ymax, alpha=mean_alpha), data=function(y)filter(y, overlap > 0, !is.na(overlap.xmax))) +
             ggplot2::labs(title=gene, x=sprintf("position / %s", xunit), y="enrichment")
+    if (inherits(fillscale, "ScaleDiscrete"))
+        p + fillscale
+    else
+        p
 }
