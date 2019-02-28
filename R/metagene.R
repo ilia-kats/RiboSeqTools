@@ -37,6 +37,35 @@ mat_to_df <- function(mat, boot) {
     }
 }
 
+#' Generate the default function for metagene enrichment profiles
+#'
+#' Position-wise meta-enrichment is calculated as\eqn{E_i = \frac{\sum_g \textrm{sample1}_{gi}}{\sum_g \textrm{sample2}_{gi}}}{E_i = sum(sample[,i]) / sum(sample[,i])}
+#' where \eqn{i} is the position and \eqn{g} the gene.
+#'
+#' @param data A \code{serp_data} object
+#' @param sample1  sample1 Name of the first sample (the numerator). If missing, the default sample1 of the data set
+#'      will be used.
+#' @param sample2 Name of the second sample (the denominator). If missing, the default sample2 of the data set
+#'      will be used.
+#' @return A function that can be passed as \code{profilefun} to \link{\code{metagene_profiles}}
+#' @export
+make_enrichment_profilefun <- function(data, sample1, sample2) {
+    check_serp_class(data)
+    sample1 <- get_default_param(data, sample1)
+    sample2 <- get_default_param(data, sample2)
+
+    fbody <- substitute(colSums(sample1, na.rm=TRUE) / colSums(sample2, na.rm=TRUE), list(sample1=rlang::sym(sample1), sample2=rlang::sym(sample2)))
+
+    profilefun <- function(){}
+    args <- alist(sample1=, sample2=, ...=)
+    names(args)[1] <- sample1
+    names(args)[2] <- sample2
+    formals(profilefun) <- args
+    body(profilefun) <- fbody
+    environment(profilefun) <- parent.env(environment())
+    profilefun
+}
+
 #' Align data matrices
 #'
 #' Centers each gene at a given position within the gene.
