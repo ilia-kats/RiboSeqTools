@@ -200,7 +200,7 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), fi
 #'      \code{len} positions in either direction.
 #' @param nboot Number of bootstrap samples.
 #' @param bpparam A \code{\link[BiocParallel]{BiocParallelParam-class}} object.
-#' @return A data frame with the following columns: \describe{
+#' @return A \link[tibble]{tibble} with the following columns: \describe{
 #'      \item{id}{ID of the bootstrap sample}
 #'      \item{pos}{Distance from the \code{align} position. If \code{bin == 'byaa'} this is measured in codons,
 #'          otherwise in nucleotides.}

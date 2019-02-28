@@ -50,7 +50,7 @@ this case, genes will be aligned to the given positions and the profile will be 
 \item{bpparam}{A \code{\link[BiocParallel]{BiocParallelParam-class}} object.}
 }
 \value{
-A data frame with the following columns: \describe{
+A \link[tibble]{tibble} with the following columns: \describe{
      \item{id}{ID of the bootstrap sample}
      \item{pos}{Distance from the \code{align} position. If \code{bin == 'byaa'} this is measured in codons,
          otherwise in nucleotides.}

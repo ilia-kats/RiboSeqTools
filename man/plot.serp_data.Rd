@@ -14,20 +14,20 @@
 \item{gene}{Name of the gene/ORF to plot.}
 
 \item{sample1}{Name of the first sample (the numerator). If missing, the default sample1 of the data set
-will be used}
+will be used.}
 
 \item{sample2}{Name of the second sample (the denominator). If missing, the default sample2 of the data set
-will be used}
+will be used.}
 
 \item{exp}{Character vector of experiments to plot. If missing, all experiments are plotted.}
 
 \item{rep}{Character vector of replicates to plot. If missing, all replicates will be plotted.}
 
 \item{bin}{Bin level (\code{bynuc} or \code{byaa}). If missing, the default binning level of the data set
-will be used}
+will be used.}
 
-\item{window_size}{Window size for the confidence interval calculation. If missing, the default window size
-of the data set will be used}
+\item{window_size}{Neighborhood size for the confidence interval calculation in nucleotides. If missing, the default
+window size of the data set will be used.}
 
 \item{conf.level}{Confidence level.}
 
