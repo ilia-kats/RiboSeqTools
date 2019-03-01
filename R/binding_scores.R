@@ -111,6 +111,7 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
     avgscores <- dplyr::group_by(scores, exp, gene) %>%
         dplyr::filter_if(is.numeric, dplyr::all_vars(is.finite(.))) %>%
         dplyr::filter(n() > 1) %>%
+        dplyr::group_trim() %>%
         dplyr::summarize_if(is.numeric, mean) %>%
         dplyr::mutate(rep='avg')
     dplyr::bind_rows(scores, avgscores) %>%
