@@ -32,19 +32,33 @@ normalize <- function(data, exclude=c()) {
 #'
 #' @param xvals X values
 #' @param yvals Y values
+#' @param upper_plateau If \code{TRUE}, instead of connecting the first and last data points, the
+#'      left support is chosen such that no points are above the line. This is useful if there are
+#'      a few outliers with very low X values.
 #' @return The threshold, i.e. the value of the X axis where the distance between the Y value and
-#'      the diagonal connecting the first and last points is maximal
+#'      the line connecting the first and last points is maximal.
 #' @examples
 #'      xvals <- 1:20
 #'      yvals <- c(20:11, -0.2 * 1:10 + 11)
 #'      get_elbow_threshold(xvals, yvals)
 #' @export
-get_elbow_threshold <- function(xvals, yvals) {
+get_elbow_threshold <- function(xvals, yvals, upper_plateau=FALSE) {
     if (missing(yvals) && is.matrix(xvals) && ncol(xvals) == 2) {
         yvals <- xvals[,2]
         xvals <- xvals[,1]
     } else if (missing(yvals)) {
         stop("y coordinates required")
+    }
+    if (upper_plateau) {
+        lastx <- max(xvals)
+        lasty <- min(yvals)
+        idx <- which(!purrr::map2_lgl(xvals, yvals, function(x, y) {
+            any(yvals > (lasty - y) / (lastx - x) * (xvals - x) + y)
+        }))
+        minx <- min(xvals[idx])
+        idx <- which(xvals >= minx)
+        xvals <- xvals[idx]
+        yvals <- yvals[idx]
     }
     v <- c(diff(range(xvals)), -diff(range(yvals)))
     w <- mapply(function(x, y, xmin, ymax)c(x - xmin, y - ymax), xvals, yvals, min(xvals), max(yvals))
