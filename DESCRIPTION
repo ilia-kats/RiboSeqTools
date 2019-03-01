@@ -4,9 +4,8 @@ Version: 0.0.0.9000
 Authors@R: c(person("Ilia", "Kats", email = "i.kats@zmbh.uni-heidelberg.de", role = c("aut", "cre"), comment=c(ORCID="0000-0001-5220-5671")),
              person("Lena", "Eismann", email = "l.eismann@zmbh.uni-heidelberg.de", role = c("aut")))
 Description: Tools for analysis of selective ribosome profiling (SeRP) data
-Depends: R (>= 3.5)
-Imports: 
-    Matrix,
+Depends: R (>= 3.5), Matrix
+Imports:
     reshape2,
     rlang,
     purrr,
@@ -15,11 +14,11 @@ Imports:
     dplyr (>= 0.8),
     tibble,
     binom,
-    BiocParallel,
     scales,
     ggplot2 (>= 3.0),
     treemap,
-    grid
+    grid,
+    BiocParallel
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
