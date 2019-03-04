@@ -92,13 +92,19 @@ binom_ci_profile <- function(data, gene, sample1, sample2, exp, rep, bin, window
                 winsize <- window_size %/% 3
             }
 
-            s1_data <- rep[[sample1]][[bin]][gene, 1:len]
-            s2_data <- rep[[sample2]][[bin]][gene, 1:len]
-            win_s1 <- as.integer(round(convolve(s1_data, rep(1, winsize), type='open')[ceiling(winsize/2):(len+floor(winsize/2))]))
-            win_s2 <- as.integer(round(convolve(s2_data, rep(1, winsize), type='open')[ceiling(winsize/2):(len+floor(winsize/2))]))
+            s1_idx <- which(rownames(rep[[sample1]][[bin]]) == gene)
+            s2_idx <- which(rownames(rep[[sample2]][[bin]]) == gene)
+            if (length(s1_idx) > 0 && length(s2_idx > 0)) {
+                s1_data <- rep[[sample1]][[bin]][gene, 1:len]
+                s2_data <- rep[[sample2]][[bin]][gene, 1:len]
+                win_s1 <- as.integer(round(convolve(s1_data, rep(1, winsize), type='open')[ceiling(winsize/2):(len+floor(winsize/2))]))
+                win_s2 <- as.integer(round(convolve(s2_data, rep(1, winsize), type='open')[ceiling(winsize/2):(len+floor(winsize/2))]))
 
-            cidf <- binom_ci(win_s1, win_s2, get_total_counts(data)[[nexp]][[nrep]][[sample1]], get_total_counts(data)[[nexp]][[nrep]][[sample2]], conf.level=conf.level)
-            tibble::tibble(winmid=1:len, !!sample1 := s1_data, !!sample2 := s2_data, !!paste0('win_', sample1) := win_s1, !!paste0('win_', sample2) := win_s2, ratio_mean = cidf$mean, lo_CI = cidf$lower, hi_CI = cidf$upper)
+                cidf <- binom_ci(win_s1, win_s2, get_total_counts(data)[[nexp]][[nrep]][[sample1]], get_total_counts(data)[[nexp]][[nrep]][[sample2]], conf.level=conf.level)
+                tibble::tibble(winmid=1:len, !!sample1 := s1_data, !!sample2 := s2_data, !!paste0('win_', sample1) := win_s1, !!paste0('win_', sample2) := win_s2, ratio_mean = cidf$mean, lo_CI = cidf$lower, hi_CI = cidf$upper)
+            } else {
+                tibble::tibble()
+            }
         }, exp[rep], names(exp[rep]), SIMPLIFY=FALSE)
         dplyr::bind_rows(df, .id='rep')
     }, get_data(data)[exp], names(get_data(data)[exp]), SIMPLIFY=FALSE)

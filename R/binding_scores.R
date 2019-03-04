@@ -106,8 +106,7 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
                            !!paste0(sample2, '_avg_read_density') := sum(s2) / len)
         }) %>%
         dplyr::filter(!(gene %in% exclude)) %>%
-        dplyr::ungroup() %>%
-        dplyr::mutate(gene=as.factor(gene))
+        dplyr::ungroup()
     avgscores <- dplyr::group_by(scores, exp, gene) %>%
         dplyr::filter_if(is.numeric, dplyr::all_vars(is.finite(.))) %>%
         dplyr::filter(n() > 1) %>%
@@ -117,5 +116,6 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
     dplyr::bind_rows(scores, avgscores) %>%
         dplyr::group_by(exp, rep) %>%
         dplyr::mutate(rank=dplyr::dense_rank(desc(lo_CI))) %>%
-        dplyr::ungroup()
+        dplyr::ungroup() %>%
+        dplyr::mutate(gene=as.factor(gene))
 }
