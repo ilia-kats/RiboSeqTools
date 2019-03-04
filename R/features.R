@@ -28,7 +28,7 @@ serp_features <- function(..., ref, bin=c('bynuc', 'byaa'), defaults=list()) {
             stopifnot(all(names(f) %in% c('bynuc', 'byaa')))
             f
         }
-    })
+    }, simplify=FALSE)
     ref$cds_length <- ref$length %/% 3
     ret <- list(ref=ref, data=data)
     ret <- structure(ret, class='serp_features')

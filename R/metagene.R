@@ -66,6 +66,47 @@ make_enrichment_profilefun <- function(data, sample1, sample2) {
     profilefun
 }
 
+make_average_profilefun_impl <- function(featurenames) {
+    fbody <- sapply(featurenames, function(x)as.expression(substitute(ret[[x]] <- colMeans(xx, na.rm=TRUE), env=list(x=x, xx=as.name(x)))))
+    fbody <- c(expression(ret <- list()), fbody, expression(ret))
+    args <- alist()
+    for (arg in featurenames) {
+        tmp <- alist(tmp=)
+        names(tmp) <- arg
+        args <- c(args, tmp)
+    }
+    args <- c(args, alist(...=))
+    profilefun <- function(){}
+    formals(profilefun) <- args
+    body(profilefun) <- as.call(c(as.name("{"), fbody))
+    environment(profilefun) <- parent.env(environment())
+    profilefun
+}
+
+#' Generate a default function for metagene profiles that computes the position-wise arithmetic mean
+#'
+#'
+#' @param data The data
+#' @return A function that can be passed as \code{profilefun} to \link{\code{metagene_profiles}}
+#' @export
+make_average_profilefun <- function(data) {
+    UseMethod("make_average_profilefun")
+}
+
+#' @rdname make_average_profilefun
+#' @export
+make_average_profilefun.serp_data <- function(data) {
+    featurenames <- unique(sapply(get_data(data), function(exp)sapply(exp, names)))
+    make_average_profilefun_impl(featurenames)
+}
+
+#' @rdname make_average_profilefun
+#' @export
+make_average_profilefun.serp_features <- function(data) {
+    featurenames <- names(get_data(data))
+    make_average_profilefun_impl(featurenames)
+}
+
 #' Align data matrices
 #'
 #' Centers each gene at a given position within the gene.
@@ -120,7 +161,8 @@ make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, binwidth=
 metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, bpparam=BiocParallel::bpparam()) {
     mats <- lapply(d, function(m) {
         m <- m[[bin]]
-        cfilter <- if(is.null(filter)) TRUE else filter[filter %in% rownames(m)]
+        genes <- intersect(names(refs), rownames(m))
+        cfilter <- if(is.null(filter)) genes else filter[filter %in% genes]
         m[cfilter,, drop=FALSE]
     })
     pars <- list(binwidth=binwidth, binmethod=binmethod, align=align)
@@ -137,6 +179,15 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), fi
 
         if (binwidth > 1) {
             rval <- ifelse(binmethod == 'mean', 1 / binwidth, 1)
+
+            binmat <- function(m, r, len) {
+                na_ind <- which(as.matrix(is.na(m)), arr.ind=TRUE)
+                m[na_ind] <- 0
+                m <- as.matrix(m %*% r)
+                na_ind[,2] <- na_ind[,2] %/% binwidth
+                m[na_ind[na_ind[,2] <= len %/% binwidth], ] <- NA_real_
+                m
+            }
             if (length(unique(sapply(mats, ncol))) == 1) {
                 len <- ceiling(len[1] / binwidth)
 
@@ -144,7 +195,7 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), fi
                 if (align == 'stop')
                     r <- rev(r)
                 r <- matrix(r, ncol=len, byrow=FALSE)
-                mats <- lapply(mats, function(m) tidyr::replace_na(m, 0) %*% r)
+                mats <- lapply(mats, binmat, r, len)
             } else {
                 mats <- mapply(function(m, l) {
                     len <- ceiling(l / binwidth)
@@ -152,14 +203,29 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), fi
                     r <- rep(c(rep(rval, binwidth), rep(0, ncol(m))), length.out=ncol(m) * len)
                     if (align == 'stop')
                         r <- rev(r)
-                    tidyr::replace_na(m, 0) %*% matrix(r, ncol=len, byrow=FALSE)
+                    binmat(m, r, len)
                 }, mats, len, SIMPLIFY=FALSE)
             }
         }
 
         mats <- mapply(function(m, len) {
             coords <- if (align == 'stop') (ncol(m) - len + 1):ncol(m) else 1:len
-            as.matrix(m[,coords, drop=FALSE])
+            m <- m[,coords, drop=FALSE]
+            if (align == 'start') {
+                t(mapply(function(r, l) {
+                    x <- m[r,]
+                    if (length(x) > l %/% binwidth)
+                        x[(l %/% binwidth + 1):length(x)] <- NA_real_
+                    x
+                }, rownames(m), refs[rownames(m)]))
+            } else {
+                t(mapply(function(r, l) {
+                    x <- m[r,]
+                    if (length(x) > l %/% binwidth)
+                        x[1:(length(x) - l %/% binwidth)] <- NA_real_
+                    x
+                }, rownames(m), refs[rownames(m)]))
+            }
         }, mats, len, SIMPLIFY=FALSE)
     } else {
         mats <- make_aligned_mats(mats, align, refs, len, binwidth=1, binmethod='sum')
@@ -291,13 +357,13 @@ metagene_profiles.serp_features <- function(data, profilefun, len, bin, filter=N
     binmethod <- match.arg(binmethod)
     refs <- setNames(get_reference(data)$length, get_reference(data)$gene)
     if (bin == 'byaa')
-        refs <- refs / 3
-    metagene_profile(d,
+        refs <- refs %/% 3
+    metagene_profile(get_data(data),
                      profilefun,
                      len,
                      bin,
                      refs,
-                     filter=.filter,
+                     filter=filter,
                      binwidth=binwidth,
                      binmethod=binmethod,
                      normalizefun=normalizefun,
