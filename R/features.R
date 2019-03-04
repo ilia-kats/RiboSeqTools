@@ -47,6 +47,4 @@ print.serp_features <- function(data) {
     cat(sprintf('A ribosome profiling feature set with %d features\n', length(get_data(data))))
     print_list_name("", " .", "", get_data(data))
     cat('\n')
-    cat('Defaults:\n')
-    print(get_defaults(data))
 }
