@@ -378,7 +378,8 @@ metagene_profiles.serp_features <- function(data, profilefun, len, bin, filter=N
 #' the real profile using all data, shading indicates a bootstrapping-based confdience interval.
 #'
 #' @param df A data frame created by \code{\link{metagene_profiles}}.
-#' @param ylab Y axis label
+#' @param ylab Y axis label.
+#' @param ytrans Y axis transformation.
 #' @param exp Experiments to plot. Defaults to all experiments.
 #' @param colaes Variable to use for the color scale.
 #' @param align Alignment to use in X axis label.
@@ -387,7 +388,7 @@ metagene_profiles.serp_features <- function(data, profilefun, len, bin, filter=N
 #' @param ci.alpha Transparency level for the CI shading.
 #' @return A \code{\link[ggplot2]{ggplot}} object.
 #' @export
-plot_metagene_profiles <- function(df, ylab, exp=NULL, colaes=exp, align='start', highlightregion=list(), highlightargs=list(), conf.level=0.95, ci.alpha=0.3) {
+plot_metagene_profiles <- function(df, ylab, exp=NULL, colaes=exp, align='start', ytrans='identity', highlightregion=list(), highlightargs=list(), conf.level=0.95, ci.alpha=0.3) {
     colaes <- rlang::enexpr(colaes)
     if (!is.null(exp))
         df <- dplyr::filter(df, exp %in% !!exp)
@@ -395,7 +396,7 @@ plot_metagene_profiles <- function(df, ylab, exp=NULL, colaes=exp, align='start'
         annotate_profile(highlightregion, !!!highlightargs) +
         ggplot2::stat_summary(ggplot2::aes(color=NULL), data=function(x)dplyr::filter(x, boot), geom='ribbon', fun.ymin=function(x)quantile(x, 0.5 * (1 - conf.level)), fun.ymax=function(x)quantile(x, 1 - 0.5 * (1 - conf.level)), alpha=ci.alpha) +
         ggplot2::geom_line(ggplot2::aes(y=summary), data=function(x)dplyr::filter(x, !boot)) +
-        ggplot2::scale_y_continuous(trans='log2') +
+        ggplot2::scale_y_continuous(trans=ytrans) +
         ggplot2::labs(x=sprintf('distance from %s / codons', align), y=ylab) +
         ggplot2::scale_x_continuous(expand=ggplot2::expand_scale()) +
         ggplot2::guides(fill=ggplot2::guide_legend(override.aes=list(alpha=1)), color=FALSE)

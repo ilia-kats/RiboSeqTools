@@ -5,19 +5,21 @@
 \title{Plot metagene profiles}
 \usage{
 plot_metagene_profiles(df, ylab, exp = NULL, colaes = exp,
-  align = "start", highlightregion = list(), highlightargs = list(),
-  conf.level = 0.95, ci.alpha = 0.3)
+  align = "start", ytrans = "identity", highlightregion = list(),
+  highlightargs = list(), conf.level = 0.95, ci.alpha = 0.3)
 }
 \arguments{
 \item{df}{A data frame created by \code{\link{metagene_profiles}}.}
 
-\item{ylab}{Y axis label}
+\item{ylab}{Y axis label.}
 
 \item{exp}{Experiments to plot. Defaults to all experiments.}
 
 \item{colaes}{Variable to use for the color scale.}
 
 \item{align}{Alignment to use in X axis label.}
+
+\item{ytrans}{Y axis transformation.}
 
 \item{highlightargs}{Named list of additional parameters to pass to \code{\link[ggplot2]{annotate}}}
 
