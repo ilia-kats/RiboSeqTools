@@ -221,3 +221,74 @@ set_normalized <- function(data, normalized) {
     data$normalized <- normalized
     data
 }
+
+#' @export
+`[.serp_data` <- function(data, i) {
+    set_data(data, get_data(data)[i])
+}
+
+#' @export
+c.serp_data <- function(...) {
+    dat <- list(...)
+    sapply(dat, check_serp_class)
+    nrml <- unique(sapply(dat, is_normalized))
+    if (length(nrml) > 1)
+        rlang::abort("Mixture of normalized and unnormalized data given.")
+    outdat <- get_data(dat[[1]])
+    outtotal <- get_total_counts(dat[[1]])
+    for (d in dat[-1]) {
+        cdata <- get_data(d)
+        ctotal <- get_total_counts(d)
+        cdnames <- names(cdata)
+        for (i in cdnames) {
+            if (i %in% outdat) {
+                cdrepnames <- names(cdata[[i]])
+                for (j in cdrepnames) {
+                    if (j %in% outdat[[i]]) {
+                        nrep <- list(cdata[[i]][[j]])
+                        nreptotal <- list(ctotal[[i]][[j]])
+                        names(nrep) <- names(nreptotal) <- max(names(outdat[[i]]))
+                        outdat[[i]] <- c(outdat[[i]], nrep)
+                        outtotal[[i]] <- c(outtotal[[i]], nreptotal)
+                    } else {
+                        outdat[[i]] <- c(outdat[[i]], cdata[[i]][j])
+                        outtotal[[i]] <- c(outtotal[[i]], ctotal[[i]][[j]])
+                    }
+                }
+            } else {
+                outdat <- c(outdat, cdata[i])
+                outtotal <- c(outtotal, ctotal[i])
+            }
+        }
+    }
+
+    outref <- purrr::reduce(purrr::map_dfr(dat, get_reference), dplyr::union)
+    outdefaults <- purrr::reduce(purrr::map(dat, get_defaults), combine_defaults)
+    ret <- structure(list(ref=outref, data=outdat, total=outtotal, normalized=nrml, defaults=list()), class='serp_data')
+    set_defaults(ret, !!!outdefaults)
+}
+
+combine_defaults <- function(x, y) {
+    out <- list()
+    if (isTRUE(x$bin != y$bin))
+        out$bin <- 'byaa'
+    else
+        out$bin <- x$bin
+
+    if (isTRUE(x$sample1 == y$sample1))
+        out$sample1 <- x$sample1
+    if (isTRUE(x$sample2 == y$sample2))
+        out$sample2 <- x$sample2
+
+    if (isTRUE(x$window_size == y$window_size))
+        out$window_size <- x$window_size
+
+    if (isTRUE(x$plot_ylim == y$plot_ylim))
+        out$plot_ylim <- x$plot_ylim
+    else if (!is.null(x$plot_ylim) || !is.null(y$plot_ylim))
+        out$plot_ylim <- range(x$plot_ylim, y$plot_ylim)
+
+    out$plot_ybreaks <- dplyr::union(x$plot_ybreaks, y$plot_ybreaks)
+
+    out
+}

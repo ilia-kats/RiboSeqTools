@@ -48,3 +48,39 @@ print.serp_features <- function(data) {
     print_list_name("", " .", "", get_data(data))
     cat('\n')
 }
+
+#' @export
+`[.serp_features` <- function(data, i) {
+    set_data(data, get_data(data)[i])
+}
+
+#' @export
+c.serp_features <- function(...) {
+    dat <- list(...)
+    sapply(dat, check_serp_features_class)
+    outdata <- get_data(dat[[1]])
+    for (d in dat[-1]) {
+        cdata <- get_data(d)
+        cdnames <- names(cdata)
+
+        for (i in cdnames) {
+            if (i %in% names(outdata)) {
+                for (j in names(d[[i]])) {
+                    if (j %in% names(outdata[[i]])) {
+                        if (d[[i]][[j]] != outdata[[i]][[j]])
+                            rlang::abort(sprintf("Different features for %s %s", i, j))
+                    } else {
+                        outdata[[i]][[j]] <- d[[i]][[j]]
+                    }
+                }
+            } else {
+                x[[i]] <- y[[i]]
+            }
+        }
+    }
+
+    outref <- purrr::reduce(purrr::map_dfr(dat, get_reference), dplyr::union)
+    outdefaults <- purrr::reduce(purrr::map(dat, get_defaults), combine_defaults)
+    ret <- structure(list(ref=outref, data=outdat, defaults=list()), class='serp_features')
+    set_defaults(ret, !!!outdefaults)
+}

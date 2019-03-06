@@ -1,8 +1,13 @@
 `%:%` <- function(d, a) {
     ifelse(is.nan(d), a, d)
 }
+
 check_serp_class <- function(data) {
     stopifnot(inherits(data, 'serp_data'))
+}
+
+check_serp_features_class <- function(data) {
+    stopifnot(inherits(data, 'serp_features'))
 }
 
 print_list_name <- function(leader, newchar, name, elem, depth=0) {
