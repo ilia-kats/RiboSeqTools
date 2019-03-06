@@ -247,7 +247,7 @@ c.serp_data <- function(...) {
                     if (j %in% outdat[[i]]) {
                         nrep <- list(cdata[[i]][[j]])
                         nreptotal <- list(ctotal[[i]][[j]])
-                        names(nrep) <- names(nreptotal) <- max(names(outdat[[i]]))
+                        names(nrep) <- names(nreptotal) <- max(names(outdat[[i]])) + 1
                         outdat[[i]] <- c(outdat[[i]], nrep)
                         outtotal[[i]] <- c(outtotal[[i]], nreptotal)
                     } else {
