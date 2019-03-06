@@ -262,7 +262,7 @@ c.serp_data <- function(...) {
         }
     }
 
-    outref <- purrr::reduce(purrr::map_dfr(dat, get_reference), dplyr::union)
+    outref <- purrr::reduce(purrr::map(dat, get_reference), dplyr::union)
     outdefaults <- purrr::reduce(purrr::map(dat, get_defaults), combine_defaults)
     ret <- structure(list(ref=outref, data=outdat, total=outtotal, normalized=nrml, defaults=list()), class='serp_data')
     set_defaults(ret, !!!outdefaults)

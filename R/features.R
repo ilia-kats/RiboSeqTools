@@ -79,7 +79,7 @@ c.serp_features <- function(...) {
         }
     }
 
-    outref <- purrr::reduce(purrr::map_dfr(dat, get_reference), dplyr::union)
+    outref <- purrr::reduce(purrr::map(dat, get_reference), dplyr::union)
     outdefaults <- purrr::reduce(purrr::map(dat, get_defaults), combine_defaults)
     ret <- structure(list(ref=outref, data=outdat, defaults=list()), class='serp_features')
     set_defaults(ret, !!!outdefaults)
