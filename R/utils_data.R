@@ -229,7 +229,7 @@ set_normalized <- function(data, normalized) {
 
 #' @export
 c.serp_data <- function(...) {
-    dat <- list(...)
+    dat <- rlang::list2(...)
     sapply(dat, check_serp_class)
     nrml <- unique(sapply(dat, is_normalized))
     if (length(nrml) > 1)
@@ -241,10 +241,10 @@ c.serp_data <- function(...) {
         ctotal <- get_total_counts(d)
         cdnames <- names(cdata)
         for (i in cdnames) {
-            if (i %in% outdat) {
+            if (i %in% names(outdat)) {
                 cdrepnames <- names(cdata[[i]])
                 for (j in cdrepnames) {
-                    if (j %in% outdat[[i]]) {
+                    if (j %in% names(outdat[[i]])) {
                         nrep <- list(cdata[[i]][[j]])
                         nreptotal <- list(ctotal[[i]][[j]])
                         names(nrep) <- names(nreptotal) <- max(names(outdat[[i]])) + 1
