@@ -222,9 +222,16 @@ set_normalized <- function(data, normalized) {
     data
 }
 
+set_total_counts <- function(data, newdata) {
+    check_serp_class(data)
+    data$total <- newdata
+    data
+}
+
 #' @export
 `[.serp_data` <- function(data, i) {
-    set_data(data, get_data(data)[i])
+    data <- set_data(data, get_data(data)[i])
+    set_total_counts(data, get_total_counts(data)[i])
 }
 
 #' @export
