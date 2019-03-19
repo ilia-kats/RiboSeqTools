@@ -74,8 +74,8 @@ binom_ci_profile <- function(data, gene, sample1, sample2, exp, rep, bin, window
     genelen <- get_reference(data)$length[idx]
     cdslen <- get_reference(data)$cds_length[idx]
 
-    df <- mapply(function(exp, nexp) {
-        df <- mapply(function(rep, nrep) {
+    df <- purrr::map2_dfr(get_data(data)[exp], names(get_data(data)[exp]), function(exp, nexp) {
+        df <- purrr::map2_dfr(exp[rep], names(exp[rep]), function(rep, nrep) {
             if (!binmissing && !(is.null(rep[[sample1]][[bin]]) || !is.null(rep[[sample2]][[bin]]))) {
                 stop(sprintf("requested binning level not found for experiment %s replicate %s samples %s and %s", nexp, nrep, sample1, sample2))
             } else if (!is.null(rep[[sample1]]$byaa) && !is.null(rep[[sample2]]$byaa)) {
@@ -105,10 +105,8 @@ binom_ci_profile <- function(data, gene, sample1, sample2, exp, rep, bin, window
             } else {
                 tibble::tibble()
             }
-        }, exp[rep], names(exp[rep]), SIMPLIFY=FALSE)
-        dplyr::bind_rows(df, .id='rep')
-    }, get_data(data)[exp], names(get_data(data)[exp]), SIMPLIFY=FALSE)
-    dplyr::bind_rows(df, .id='exp')
+        }, .id='rep')
+    }, .id='exp')
 }
 
 #' Create a mapping between experiment identifiers and names

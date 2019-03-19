@@ -20,6 +20,9 @@ will be used.}
 \item{bin}{Binning mode (\code{bynuc} or \code{byaa}). If missing, the default binning level of the data set
 will be used.}
 
+\item{window_size}{Neighborhood size for the confidence interval calculation in nucleotides. If missing, the default
+window size of the data set will be used.}
+
 \item{skip_5prime}{How many nucleotides to skip at the 5' end of the ORF. Useful if you know that the 5' end
 contains artifacts.}
 
@@ -31,9 +34,6 @@ contains artifacts.}
 \item{conf.level}{Confidence level.}
 
 \item{bpparam}{A \code{\link[BiocParallel]{BiocParallelParam-class}} object.}
-
-\item{wndow_size}{Neighborhood size for the confidence interval calculation in nucleotides. If missing, the default
-window size of the data set will be used.}
 }
 \value{
 A \link[tibble]{tibble} with the following columns: \describe{

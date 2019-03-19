@@ -81,6 +81,8 @@ get_elbow_threshold <- function(xvals, yvals, upper_plateau=FALSE) {
 #'          }
 #'      \item{get_total_counts}{Nested named list containing toal read counts for each sample.}
 #'      \item{get_defaults}{Named list of default parameters for this data set.}
+#'      \item{get_background_model}{Background model estimated by \code{\link{fit_background_model}}}
+#'      \item{get_binding_pvalues}{Binding p-values calculated by \code{\link{test_binding}}}
 #'      \item{is_normalized}{A logical value indicating whether the data object contains raw or normalized
 #'          read counts.}
 #'      }
@@ -210,6 +212,41 @@ set_defaults.serp_features <- function(data, ...) {
     data
 }
 
+#' @rdname serp_data_accessors
+#' @export
+get_background_model <- function(data) {
+    check_serp_class(data)
+    data$background_model
+}
+
+#' @rdname serp_data_accessors
+#' @export
+get_binding_pvalues <- function(data) {
+    check_serp_class(data)
+    data$binding_pvals
+}
+
+set_reference <- function(data, ref) {
+    UseMethod("set_reference")
+}
+
+set_reference.serp_data <- function(data, ref) {
+    data$ref <- ref
+    data
+}
+
+set_background_model <- function(data, bgmodel) {
+    check_serp_class(data)
+    data$background_model <- bgmodel
+    data
+}
+
+set_binding_pvalues <- function(data, pvals) {
+    check_serp_class(data)
+    data$binding_pvals <- pvals
+    data
+}
+
 set_data <- function(data, newdata) {
     check_serp_class(data)
     data$data <- newdata
@@ -231,7 +268,16 @@ set_total_counts <- function(data, newdata) {
 #' @export
 `[.serp_data` <- function(data, i) {
     data <- set_data(data, get_data(data)[i])
-    set_total_counts(data, get_total_counts(data)[i])
+    data <- set_total_counts(data, get_total_counts(data)[i])
+
+    bgmodel <- get_background_model(data)
+    if (!is.null(bgmodel))
+        data <- set_background_model(data, bgmodel[i])
+
+    pvals <- get_binding_pvalues(data)
+    if (!is.null(pvals))
+        data <- set_pvals(dplyr::filter(pvals, exp %in% i))
+    data
 }
 
 #' @export
@@ -243,9 +289,17 @@ c.serp_data <- function(...) {
         rlang::abort("Mixture of normalized and unnormalized data given.")
     outdat <- get_data(dat[[1]])
     outtotal <- get_total_counts(dat[[1]])
+    outbgmodel <- NULL
+    if (any(!sapply(dat, function(x)is.null(get_background_model(x)))))
+        outbgmodel <- list()
+    outpvals <- NULL
+    if (any(!sapply(data, function(x)is.null(get_binding_pvalues(x)))))
+        outpvals <- tibble::tibble()
     for (d in dat[-1]) {
         cdata <- get_data(d)
         ctotal <- get_total_counts(d)
+        cbgmodel <- get_background_model(d)
+        cpvals <- get_binding_pvalues(d)
         cdnames <- names(cdata)
         for (i in cdnames) {
             if (i %in% names(outdat)) {
@@ -254,25 +308,53 @@ c.serp_data <- function(...) {
                     if (j %in% names(outdat[[i]])) {
                         nrep <- list(cdata[[i]][[j]])
                         nreptotal <- list(ctotal[[i]][[j]])
-                        names(nrep) <- names(nreptotal) <- max(names(outdat[[i]])) + 1
+                        newrepname <- max(names(outdat[[i]])) + 1
+                        names(nrep) <- names(nreptotal) <- newrepname
                         outdat[[i]] <- c(outdat[[i]], nrep)
                         outtotal[[i]] <- c(outtotal[[i]], nreptotal)
+
+                        if (!is.null(cbgmodel)) {
+                            nrepbg <- list(cbgmodel[[i]][[j]])
+                            names(nrepbg) <- newrepname
+                            outbgmodel[[i]] <- c(outbgmodel[[i]], nrepbg)
+                        }
+                        if (!is.null(cpvals)) {
+                            outpvals <- dplyr::filter(cpvals, exp == i, rep == j) %>%
+                                mutate(rep=nrepname) %>%
+                                bind_rows(outpvals)
+                        }
                     } else {
                         outdat[[i]] <- c(outdat[[i]], cdata[[i]][j])
                         outtotal[[i]] <- c(outtotal[[i]], ctotal[[i]][[j]])
+                        if (!is.null(cbgmodel)) {
+                            outbgmodel[[i]] <- c(outbgmodel[[i]], cbgmodel[[i]][[j]])
+                        }
+                        if (!is.null(cpvals)) {
+                            outpvals <- dplyr::bind_rows(outpvals, dplyr::filter(cpvals, exp == i, rep == j))
+                        }
                     }
                 }
             } else {
                 outdat <- c(outdat, cdata[i])
                 outtotal <- c(outtotal, ctotal[i])
+                if (!is.null(cbgmodel))
+                    outbgmodel <- c(outbgmodel, cbgmodel[i])
+                if (!is.null(cpvals))
+                    outpvals <- dplyr::bind_rows(outpvals, dplyr::filter(cpvals, exp == i))
             }
         }
     }
 
     outref <- purrr::reduce(purrr::map(dat, get_reference), dplyr::union)
     outdefaults <- purrr::reduce(purrr::map(dat, get_defaults), combine_defaults)
-    ret <- structure(list(ref=outref, data=outdat, total=outtotal, normalized=nrml, defaults=list()), class='serp_data')
-    set_defaults(ret, !!!outdefaults)
+
+    structure(list(), class='serp_data') %>%
+        set_data(outdat) %>%
+        set_reference(outref) %>%
+        set_total_counts(outtotal) %>%
+        set_normalized(nrml) %>%
+        set_background_model(outbgmodel) %>%
+        set_defaults(!!!outdefaults)
 }
 
 combine_defaults <- function(x, y) {
