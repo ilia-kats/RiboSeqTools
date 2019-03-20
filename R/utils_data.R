@@ -276,7 +276,7 @@ set_total_counts <- function(data, newdata) {
 
     pvals <- get_binding_pvalues(data)
     if (!is.null(pvals))
-        data <- set_pvals(dplyr::filter(pvals, exp %in% i))
+        data <- set_binding_pvalues(data, dplyr::filter(pvals, exp %in% i))
     data
 }
 
