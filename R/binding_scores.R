@@ -170,8 +170,8 @@ betabinom_gradient <- function(pars, x, n) {
 #'      will be used.
 #' @param tunnelcoords Ribosome positions in nucleotites for which it is assumed that the nascent chain is
 #'      fully obscured by the exit tunnel.
-#' @seealso \code{\link{get_background_model}}, \code{\link{test_binding}}, \code{\link{get_binding_positions}}
 #' @return A \code{serp_data} object.
+#' @seealso \code{\link{get_background_model}}, \code{\link{test_binding}}, \code{\link{get_binding_positions}}
 #' @export
 fit_background_model <- function(data, sample1, sample2, bin, tunnelcoords=18:90) {
     check_serp_class(data)
@@ -219,6 +219,7 @@ fit_background_model <- function(data, sample1, sample2, bin, tunnelcoords=18:90
 #'
 #' @param data A \code{serp_data} object.
 #' @param type Type of plot, one of \code{density} or \code{ratio}.
+#' @return A \code{\link[ggplot2]{ggplot}} object.
 #' @seealso \code{\link{fit_background_model}}
 #' @importFrom rmutil rbetabinom
 #' @export

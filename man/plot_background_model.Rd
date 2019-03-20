@@ -11,6 +11,9 @@ plot_background_model(data, type = c("density", "ratio"))
 
 \item{type}{Type of plot, one of \code{density} or \code{ratio}.}
 }
+\value{
+A \code{\link[ggplot2]{ggplot}} object.
+}
 \description{
 Creates one plot per sample and replicate in a faceted display.
 }
