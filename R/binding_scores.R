@@ -251,15 +251,16 @@ plot_background_model <- function(data, type=c('density', 'ratio')) {
             geom_line(aes(x, density), data=densities, color='red') +
             facet_grid(rep~exp)
     } else if (type == 'ratio') {
+        counts <- mutate(counts, denom=!!rlang::sym(s1)+!!rlang::sym(s2))
         rcounts <- purrr::map_dfr(bgmodel$model, function(exp) {
             purrr::map_dfr(exp, function(rep) {
                 rb <- rbetabinom(length(rep[[s1]]),(rep[[s1]] + rep[[s2]]), m=rep$fit$par['m'], s=rep$fit$par['s'])
-                tibble::enframe(rep[[s1]], name='gene', value=s1) %>%
-                    mutate(!!s2 := rb, type='random')
+                tibble::enframe(rb, name='gene', value=s1) %>%
+                    mutate(gene=names(rep[[s1]]), !!s2 := rep[[s2]], denom=rep[[s1]]+rep[[s2]], type='random')
             }, .id='rep')
         }, .id='exp')
         bind_rows(counts, rcounts) %>%
-            ggplot(aes(tt, ip/(ip + tt), shape=type, color=type)) +
+            ggplot(aes(!!rlang::sym(s2), !!rlang::sym(s1)/denom, shape=type, color=type)) +
             geom_point(alpha=0.5) +
             scale_x_log10() +
             scale_shape_manual(values=c(observed=1, random=20)) +
