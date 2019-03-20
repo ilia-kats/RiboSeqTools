@@ -271,8 +271,10 @@ set_total_counts <- function(data, newdata) {
     data <- set_total_counts(data, get_total_counts(data)[i])
 
     bgmodel <- get_background_model(data)
-    if (!is.null(bgmodel))
-        data <- set_background_model(data, bgmodel[i])
+    if (!is.null(bgmodel)) {
+        bgmodel$model <- bgmodel$model[i]
+        data <- set_background_model(data, bgmodel)
+    }
 
     pvals <- get_binding_pvalues(data)
     if (!is.null(pvals))
