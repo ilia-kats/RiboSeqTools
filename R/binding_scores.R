@@ -225,20 +225,21 @@ fit_background_model <- function(data, sample1, sample2, bin, tunnelcoords=18:90
 #' @export
 plot_background_model <- function(data, type=c('density', 'ratio')) {
     check_serp_class(data)
-    if(is.null(data$background_model))
+    bgmodel <- get_background_model(data)
+    if(is.null(bgmodel))
         rlang::abort("No background model present. Run fit_background_model first.")
     type <- match.arg(type)
-    s1 <- data$sample1
-    s2 <- data$sample2
-    counts <- purrr::map_dfr(data$background_model$data, function(exp) {
+    s1 <- bgmodel$sample1
+    s2 <- bgmodel$sample2
+    counts <- purrr::map_dfr(bgmodel$model, function(exp) {
         purrr::map_dfr(exp, function(rep) {
-            dplyr::inner_join(tibble::enframe(rep[[s1]], name='gene', value=s1), tibble::enframe(rep[[s2]], name='gene', value=s2))
+            dplyr::inner_join(tibble::enframe(rep[[s1]], name='gene', value=s1), tibble::enframe(rep[[s2]], name='gene', value=s2), by='gene')
         }, .id='rep')
     }, .id='exp') %>%
         mutate(type='observed')
 
     if (type == 'density') {
-        densities <- purrr::map_dfr(data$data, function(exp) {
+        densities <- purrr::map_dfr(bgmodel$model, function(exp) {
             purrr::map_dfr(exp, function(rep) {
                 x <- seq(from=0, to=1, by=0.01)
                 y <- dbeta(x, rep$fit$par['m'] * rep$fit$par['s'], rep$fit$par['s'] * (1 - rep$fit$par['m']))
@@ -250,7 +251,7 @@ plot_background_model <- function(data, type=c('density', 'ratio')) {
             geom_line(aes(x, density), data=densities, color='red') +
             facet_grid(rep~exp)
     } else if (type == 'ratio') {
-        rcounts <- purrr::map_dfr(data$data, function(exp) {
+        rcounts <- purrr::map_dfr(bgmodel$model, function(exp) {
             purrr::map_dfr(exp, function(rep) {
                 rb <- rbetabinom(length(rep[[s1]]),(rep[[s1]] + rep[[s2]]), m=rep$fit$par['m'], s=rep$fit$par['s'])
                 tibble::enframe(rep[[s1]], name='gene', value=s1) %>%
