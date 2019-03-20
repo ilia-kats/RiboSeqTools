@@ -295,6 +295,7 @@ windowed_readcounts <- function(mat, windowlen) {
 #' @return A \code{serp_data} object.
 #' @seealso \code{\link{get_binding_pvalues}}, \code{\link{fit_background_model}}, \code{\link{get_binding_positions}}
 #' @export
+#' @importFrom rmutil pbetabinom dbetabinom
 test_binding <- function(data, window_size, bpparam=BiocParallel::bpparam()) {
     check_serp_class(data)
     window_size <- get_default_param(data, window_size)
