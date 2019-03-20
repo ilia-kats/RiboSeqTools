@@ -402,5 +402,6 @@ get_binding_positions <- function(data, fdr=0.01) {
 
             ret <- tibble::tibble(start=start, end=end, width=end - start + 1) %>%
                 mutate(!!bgmodel$sample1 := purrr::map2_int(start, end, function(s,e)sum(s1[s:e])), !!bgmodel$sample2 := purrr::map2_int(start, end, function(s,e)sum(s2[s:e])))
-        })
+        }) %>%
+        dplyr::ungroup()
 }
