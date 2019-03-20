@@ -4,7 +4,8 @@
 \alias{fit_background_model}
 \title{Fit a background model to a selective ribosome profiling data set}
 \usage{
-fit_background_model(data, sample1, sample2, bin, tunnelcoords = 18:90)
+fit_background_model(data, sample1, sample2, bin, tunnelcoords = 18:90,
+  use_quantile = 0.5)
 }
 \arguments{
 \item{data}{A \code{serp_data} object.}
@@ -20,6 +21,9 @@ will be used.}
 
 \item{tunnelcoords}{Ribosome positions in nucleotites for which it is assumed that the nascent chain is
 fully obscured by the exit tunnel.}
+
+\item{quantile}{Only genes whith \code{sample2 >= quantile(sample2, use_quantile)} will be used for
+parameter estimation. This reduces the effect of random drop-outs on the final model.}
 }
 \value{
 A \code{serp_data} object.

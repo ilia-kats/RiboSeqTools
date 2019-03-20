@@ -170,10 +170,12 @@ betabinom_gradient <- function(pars, x, n) {
 #'      will be used.
 #' @param tunnelcoords Ribosome positions in nucleotites for which it is assumed that the nascent chain is
 #'      fully obscured by the exit tunnel.
+#' @param quantile Only genes whith \code{sample2 >= quantile(sample2, use_quantile)} will be used for
+#'      parameter estimation. This reduces the effect of random drop-outs on the final model.
 #' @return A \code{serp_data} object.
 #' @seealso \code{\link{get_background_model}}, \code{\link{test_binding}}, \code{\link{get_binding_positions}}
 #' @export
-fit_background_model <- function(data, sample1, sample2, bin, tunnelcoords=18:90) {
+fit_background_model <- function(data, sample1, sample2, bin, tunnelcoords=18:90, use_quantile=0.5) {
     check_serp_class(data)
     if(is_normalized(data))
         rlang::abort("Need count data")
@@ -191,18 +193,19 @@ fit_background_model <- function(data, sample1, sample2, bin, tunnelcoords=18:90
         purrr::map(exp, function(rep) {
             s1 <- Matrix::rowSums(rep[[sample1]][[bin]][,coords], na.rm=TRUE)
             s2 <- Matrix::rowSums(rep[[sample2]][[bin]][,coords], na.rm=TRUE)
-            genes <- intersect(names(s1), names(s2))
-            s1 <- s1[genes]
-            s2 <- s2[genes]
-            opt <- optim(c('s'=2,'m'=0.5), betabinom_ll, gr=betabinom_gradient, x=s1, n=s1 + s2, method='L-BFGS-B', control=list(fnscale=-1), lower=rep(.Machine$double.eps, 2), upper=c(Inf, 1 - .Machine$double.eps))
-            ret <- list()
-            ret[[sample1]] <- s1
-            ret[[sample2]] <- s2
+            genes <- intersect(names(s1), names(s2)[s2 >= quantile(s2, use_quantile)])
+            opt <- optim(c('s'=2,'m'=0.5), betabinom_ll, gr=betabinom_gradient, x=s1[genes], n=s1[genes] + s2[genes], method='L-BFGS-B', control=list(fnscale=-1), lower=rep(.Machine$double.eps, 2), upper=c(Inf, 1 - .Machine$double.eps))
+            ret <- list(samples=list())
+            ret$samples[[sample1]] <- s1
+            ret$samples[[sample2]] <- s2
+            ret$quantile <- use_quantile
+            ret$used_gens <- genes
             ret$fit <- opt
             ret
         })
     })
-    set_background_model(data, list(model=ret, bin=bin, sample1=sample1, sample2=sample2, tunnelcoords=tunnelcoords))
+    set_background_model(data, list(model=ret, bin=bin, sample1=sample1, sample2=sample2, tunnelcoords=tunnelcoords)) %>%
+        set_binding_pvalues(NULL)
 }
 
 #' Quality control plots for background model estimation
@@ -233,7 +236,7 @@ plot_background_model <- function(data, type=c('density', 'ratio')) {
     s2 <- bgmodel$sample2
     counts <- purrr::map_dfr(bgmodel$model, function(exp) {
         purrr::map_dfr(exp, function(rep) {
-            dplyr::inner_join(tibble::enframe(rep[[s1]], name='gene', value=s1), tibble::enframe(rep[[s2]], name='gene', value=s2), by='gene')
+            dplyr::inner_join(tibble::enframe(rep$samples[[s1]], name='gene', value=s1), tibble::enframe(rep$samples[[s2]], name='gene', value=s2), by='gene')
         }, .id='rep')
     }, .id='exp') %>%
         mutate(type='observed')
@@ -254,9 +257,9 @@ plot_background_model <- function(data, type=c('density', 'ratio')) {
         counts <- mutate(counts, denom=!!rlang::sym(s1)+!!rlang::sym(s2))
         rcounts <- purrr::map_dfr(bgmodel$model, function(exp) {
             purrr::map_dfr(exp, function(rep) {
-                rb <- rbetabinom(length(rep[[s1]]),(rep[[s1]] + rep[[s2]]), m=rep$fit$par['m'], s=rep$fit$par['s'])
+                rb <- rbetabinom(length(rep$samples[[s1]]),(rep$samples[[s1]] + rep$samples[[s2]]), m=rep$fit$par['m'], s=rep$fit$par['s'])
                 tibble::enframe(rb, name='gene', value=s1) %>%
-                    mutate(gene=names(rep[[s1]]), !!s2 := rep[[s2]], denom=rep[[s1]]+rep[[s2]], type='random')
+                    mutate(gene=names(rep$samples[[s1]]), !!s2 := rep$samples[[s2]], denom=rep$samples[[s1]]+rep$samples[[s2]], type='random')
             }, .id='rep')
         }, .id='exp')
         bind_rows(counts, rcounts) %>%
