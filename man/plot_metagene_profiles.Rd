@@ -13,9 +13,11 @@ plot_metagene_profiles(df, ylab, color, group, align = "start",
 
 \item{ylab}{Y axis label.}
 
-\item{color}{Variable to use for the color scale.}
+\item{color}{Variable to use for the color scale. Defaults to \code{exp}, if a column \code{exp}
+exists in the data frame.}
 
-\item{group}{Additional grouping variable. Geoms will be grouped by \code{color} and \code{group}.}
+\item{group}{Additional grouping variable. Geoms will be grouped by \code{color} and \code{group}.
+Defaults to \code{rep}, if a column \code{rep} exists in the data frame.}
 
 \item{align}{Alignment to use in X axis label.}
 

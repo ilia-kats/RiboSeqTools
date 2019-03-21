@@ -381,8 +381,10 @@ metagene_profiles.serp_features <- function(data, profilefun, len, bin, filter=N
 #' @param ylab Y axis label.
 #' @param ytrans Y axis transformation.
 #' @param exp Experiments to plot. Defaults to all experiments.
-#' @param color Variable to use for the color scale.
+#' @param color Variable to use for the color scale. Defaults to \code{exp}, if a column \code{exp}
+#'      exists in the data frame.
 #' @param group Additional grouping variable. Geoms will be grouped by \code{color} and \code{group}.
+#'      Defaults to \code{rep}, if a column \code{rep} exists in the data frame.
 #' @param align Alignment to use in X axis label.
 #' @template plot_annotations
 #' @param conf.level Confidence level to plot.
@@ -395,14 +397,25 @@ metagene_profiles.serp_features <- function(data, profilefun, len, bin, filter=N
 #' @export
 plot_metagene_profiles <- function(df, ylab, color, group, align='start', ytrans='identity', highlightregion=list(), highlightargs=list(), conf.level=0.95, ci.alpha=0.3) {
     pars <- list()
+    interactions <- list()
     col <- rlang::enexpr(color)
     grp <- rlang::enexpr(group)
     if (!rlang::is_missing(color)) {
         pars$fill <- pars$color <- col
-        if (!rlang::is_missing(group)) {
-            pars$group <- rlang::expr(interaction(!!col, !!grp))
-        }
+        interactions <- c(interactions, col)
+    } else if ('exp' %in% colnames(df)) {
+        col <- rlang::expr(exp)
+        pars$fill <- pars$color <- col
+        interactions <- c(interactions, col)
     }
+    if (!rlang::is_missing(group)) {
+        interactions <- c(interactions, grp)
+    } else if ('rep' %in% colnames(df)) {
+        grp <- rlang::expr(rep)
+        interactions <- c(interactions, grp)
+    }
+    if (length(interactions) > 0)
+        pars$group <- rlang::expr(interaction(!!!interactions))
 
     p <- ggplot2::ggplot(df, ggplot2::aes(pos, summary, !!!pars)) +
         annotate_profile(highlightregion, !!!highlightargs) +
