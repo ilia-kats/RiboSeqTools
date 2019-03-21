@@ -381,18 +381,30 @@ metagene_profiles.serp_features <- function(data, profilefun, len, bin, filter=N
 #' @param ylab Y axis label.
 #' @param ytrans Y axis transformation.
 #' @param exp Experiments to plot. Defaults to all experiments.
-#' @param colaes Variable to use for the color scale.
+#' @param color Variable to use for the color scale.
+#' @param group Additional grouping variable. Geoms will be grouped by \code{color} and \code{group}.
 #' @param align Alignment to use in X axis label.
 #' @template plot_annotations
 #' @param conf.level Confidence level to plot.
 #' @param ci.alpha Transparency level for the CI shading.
 #' @return A \code{\link[ggplot2]{ggplot}} object.
+#' @examples
+#' \dontrun{
+#'      plot_metagene_profiles(df, 'enrichment', exp, rep)
+#' }
 #' @export
-plot_metagene_profiles <- function(df, ylab, exp=NULL, colaes=exp, align='start', ytrans='identity', highlightregion=list(), highlightargs=list(), conf.level=0.95, ci.alpha=0.3) {
-    colaes <- rlang::enexpr(colaes)
-    if (!is.null(exp))
-        df <- dplyr::filter(df, exp %in% !!exp)
-    p <- ggplot2::ggplot(df, ggplot2::aes(pos, summary, fill=!!colaes, color=!!colaes, group=interaction(rep, !!colaes))) +
+plot_metagene_profiles <- function(df, ylab, color, group, align='start', ytrans='identity', highlightregion=list(), highlightargs=list(), conf.level=0.95, ci.alpha=0.3) {
+    pars <- list()
+    col <- rlang::enexpr(color)
+    grp <- rlang::enexpr(group)
+    if (!rlang::is_missing(color)) {
+        pars$fill <- pars$color <- col
+        if (!rlang::is_missing(group)) {
+            pars$group <- rlang::expr(interaction(!!col, !!grp))
+        }
+    }
+
+    p <- ggplot2::ggplot(df, ggplot2::aes(pos, summary, !!!pars)) +
         annotate_profile(highlightregion, !!!highlightargs) +
         ggplot2::stat_summary(ggplot2::aes(color=NULL), data=function(x)dplyr::filter(x, boot), geom='ribbon', fun.ymin=function(x)quantile(x, 0.5 * (1 - conf.level)), fun.ymax=function(x)quantile(x, 1 - 0.5 * (1 - conf.level)), alpha=ci.alpha) +
         ggplot2::geom_line(ggplot2::aes(y=summary), data=function(x)dplyr::filter(x, !boot)) +

@@ -4,8 +4,8 @@
 \alias{plot_metagene_profiles}
 \title{Plot metagene profiles}
 \usage{
-plot_metagene_profiles(df, ylab, exp = NULL, colaes = exp,
-  align = "start", ytrans = "identity", highlightregion = list(),
+plot_metagene_profiles(df, ylab, color, group, align = "start",
+  ytrans = "identity", highlightregion = list(),
   highlightargs = list(), conf.level = 0.95, ci.alpha = 0.3)
 }
 \arguments{
@@ -13,9 +13,9 @@ plot_metagene_profiles(df, ylab, exp = NULL, colaes = exp,
 
 \item{ylab}{Y axis label.}
 
-\item{exp}{Experiments to plot. Defaults to all experiments.}
+\item{color}{Variable to use for the color scale.}
 
-\item{colaes}{Variable to use for the color scale.}
+\item{group}{Additional grouping variable. Geoms will be grouped by \code{color} and \code{group}.}
 
 \item{align}{Alignment to use in X axis label.}
 
@@ -27,6 +27,8 @@ plot_metagene_profiles(df, ylab, exp = NULL, colaes = exp,
 
 \item{ci.alpha}{Transparency level for the CI shading.}
 
+\item{exp}{Experiments to plot. Defaults to all experiments.}
+
 \item{higlightregion}{Regions in the plot to be highlighted. Can be either a list containing two-element
 numeric vectors or a two-column matrix. Rectangles spanning the entire height of the plot will be
 drawn between the given x positions.}
@@ -37,4 +39,9 @@ A \code{\link[ggplot2]{ggplot}} object.
 \description{
 Plots a metagene profile previously calculated with \code{\link{metagene_profiles}}. Lines show
 the real profile using all data, shading indicates a bootstrapping-based confdience interval.
+}
+\examples{
+\dontrun{
+     plot_metagene_profiles(df, 'enrichment', exp, rep)
+}
 }
