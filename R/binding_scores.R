@@ -276,7 +276,9 @@ windowed_readcounts <- function(mat, windowlen) {
     t(apply(mat, 1, function(x) {
         len <- sum(!is.na(x))
         total <- rep(NA_integer_, length(x))
-        total[1:len] <- as.integer(round(convolve(x[1:len], rep(1, windowlen), type='open')[ceiling(windowlen/2):(len+floor(windowlen/2))]))
+        selectstart <- floor(0.5 * windowlen + 1)
+        selectstop <- windowlen - selectstart + 1
+        total[1:len] <- as.integer(round(convolve(x[1:len], rep(1, windowlen), type='open')[selectstart:(len+selectstop)]))
         total
     }))
 }
