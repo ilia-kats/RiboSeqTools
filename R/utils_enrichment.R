@@ -99,7 +99,7 @@ binom_ci_profile <- function(data, gene, sample1, sample2, exp, rep, bin, window
                 s2_data <- rep[[sample2]][[bin]][gene, 1:len]
 
                 selectstart <- floor(0.5 * winsize + 1)
-                selectstop <- winsize - selectstart + 1
+                selectstop <- winsize - ceiling(0.5 * winsize)
                 win_s1 <- as.integer(round(convolve(s1_data, rep(1, winsize), type='open')[selectstart:(len+selectstop)]))
                 win_s2 <- as.integer(round(convolve(s2_data, rep(1, winsize), type='open')[selectstart:(len+selectstop)]))
 
