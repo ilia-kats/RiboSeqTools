@@ -28,12 +28,14 @@ do_boot <- function(n, profilefun, mats, bpparam=BiocParallel::bpparam(), ...) {
 }
 
 mat_to_df <- function(mat, boot) {
-    if (is.vector(mat)) {
+    if (is.vector(mat) && length(mat) > 0) {
         tibble::tibble(id=0, pos=1:length(mat), summary=mat, boot=boot)
-    } else if (is.matrix(mat)) {
+    } else if (is.matrix(mat) && all(dim(mat) > 0)) {
         r <- tibble::as_tibble(reshape2::melt(mat, varnames=c('id', 'pos'), value.name='summary'))
         r$boot <- boot
         r
+    } else {
+        tibble::tibble()
     }
 }
 
@@ -54,7 +56,12 @@ make_enrichment_profilefun <- function(data, sample1, sample2) {
     sample1 <- get_default_param(data, sample1)
     sample2 <- get_default_param(data, sample2)
 
-    fbody <- substitute(colSums(sample1, na.rm=TRUE) / colSums(sample2, na.rm=TRUE), list(sample1=rlang::sym(sample1), sample2=rlang::sym(sample2)))
+    fbody <- substitute({
+        if (all(dim(sample1) > 0) && all(dim(sample2) > 0))
+            colSums(sample1, na.rm=TRUE) / colSums(sample2, na.rm=TRUE)
+        else
+            numeric()
+    }, list(sample1=rlang::sym(sample1), sample2=rlang::sym(sample2)))
 
     profilefun <- function(){}
     args <- alist(sample1=, sample2=, ...=)
@@ -67,7 +74,7 @@ make_enrichment_profilefun <- function(data, sample1, sample2) {
 }
 
 make_average_profilefun_impl <- function(featurenames) {
-    fbody <- sapply(featurenames, function(x)as.expression(substitute(ret[[x]] <- colMeans(xx, na.rm=TRUE), env=list(x=x, xx=as.name(x)))))
+    fbody <- sapply(featurenames, function(x)as.expression(substitute(ret[[x]] <- ifelse(all(dim(xx) > 0), colMeans(xx, na.rm=TRUE), numeric()), env=list(x=x, xx=as.name(x)))))
     fbody <- c(expression(ret <- list()), fbody, expression(ret))
     args <- alist()
     for (arg in featurenames) {
@@ -346,7 +353,9 @@ metagene_profiles.serp_data <- function(data, profilefun, len, bin, filter=NULL,
                     SIMPLIFY=FALSE)
         bind_rows(ret, .id='rep')
     }, get_data(data), names(get_data(data)), SIMPLIFY=FALSE)
-    d <- mutate(bind_rows(d, .id='exp'), id=as.factor(id))
+    d <- bind_rows(d, .id='exp')
+    if (nrow(d) > 0)
+        d <- mutate(d, id=as.factor(id))
     d
 }
 
