@@ -208,7 +208,7 @@ set_defaults.serp_data <- function(data, ...) {
 #' @rdname set_defaults
 #' @export
 set_defaults.serp_features <- function(data, ...) {
-    data$defaults <- purrr::list_modify(data$defaults, ...)
+    data$defaults <- ifelse(is.null(data$defaults), rlang::list2(...), purrr::list_modify(data$defaults, ...))
     data
 }
 
@@ -295,7 +295,7 @@ c.serp_data <- function(...) {
     if (any(!sapply(dat, function(x)is.null(get_background_model(x)))))
         outbgmodel <- list()
     outpvals <- NULL
-    if (any(!sapply(data, function(x)is.null(get_binding_pvalues(x)))))
+    if (any(!sapply(dat, function(x)is.null(get_binding_pvalues(x)))))
         outpvals <- tibble::tibble()
     for (d in dat[-1]) {
         cdata <- get_data(d)
@@ -350,7 +350,7 @@ c.serp_data <- function(...) {
     outref <- purrr::reduce(purrr::map(dat, get_reference), dplyr::union)
     outdefaults <- purrr::reduce(purrr::map(dat, get_defaults), combine_defaults)
 
-    structure(list(), class='serp_data') %>%
+    structure(list(defaults=list()), class='serp_data') %>%
         set_data(outdat) %>%
         set_reference(outref) %>%
         set_total_counts(outtotal) %>%

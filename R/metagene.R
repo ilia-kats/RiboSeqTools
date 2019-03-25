@@ -74,7 +74,7 @@ make_enrichment_profilefun <- function(data, sample1, sample2) {
 }
 
 make_average_profilefun_impl <- function(featurenames) {
-    fbody <- sapply(featurenames, function(x)as.expression(substitute(ret[[x]] <- ifelse(all(dim(xx) > 0), colMeans(xx, na.rm=TRUE), numeric()), env=list(x=x, xx=as.name(x)))))
+    fbody <- sapply(featurenames, function(x)as.expression(substitute(ret[[x]] <- if(all(dim(xx) > 0)) colMeans(xx, na.rm=TRUE) else numeric(), env=list(x=x, xx=as.name(x)))))
     fbody <- c(expression(ret <- list()), fbody, expression(ret))
     args <- alist()
     for (arg in featurenames) {
@@ -409,7 +409,7 @@ plot_metagene_profiles <- function(df, ylab, color, group, align='start', ytrans
     interactions <- list()
     col <- rlang::enexpr(color)
     grp <- rlang::enexpr(group)
-    if (!rlang::is_missing(color)) {
+    if (!rlang::is_missing(col)) {
         pars$fill <- pars$color <- col
         interactions <- c(interactions, col)
     } else if ('exp' %in% colnames(df)) {
@@ -417,7 +417,7 @@ plot_metagene_profiles <- function(df, ylab, color, group, align='start', ytrans
         pars$fill <- pars$color <- col
         interactions <- c(interactions, col)
     }
-    if (!rlang::is_missing(group)) {
+    if (!rlang::is_missing(grp)) {
         interactions <- c(interactions, grp)
     } else if ('rep' %in% colnames(df)) {
         grp <- rlang::expr(rep)
