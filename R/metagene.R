@@ -31,7 +31,7 @@ mat_to_df <- function(mat, boot) {
     if (is.vector(mat) && length(mat) > 0) {
         tibble::tibble(id=0, pos=1:length(mat), summary=mat, boot=boot)
     } else if (is.matrix(mat) && all(dim(mat) > 0)) {
-        r <- tibble::as_tibble(reshape2::melt(mat, varnames=c('id', 'pos'), value.name='summary'))
+        r <- tibble::as_tibble(reshape2::melt(unname(mat), varnames=c('id', 'pos'), value.name='summary'))
         r$boot <- boot
         r
     } else {
