@@ -5,7 +5,7 @@
 \title{Import ribosome profiling data}
 \usage{
 load_serp(..., ref, normalize = FALSE, bin = c("bynuc", "byaa"),
-  exclude = NULL, defaults = list())
+  exclude = c(), defaults = list())
 }
 \arguments{
 \item{...}{Name-value pairs of lists. The name of each argument will be the name of an experiment.
@@ -19,11 +19,12 @@ table of one replicate experiment. Replicate order must match between sample typ
     \item{length}{ORF length in nucleotides.}
 }}
 
-\item{normalize}{Normalize the read counts to library size? Output will then be in RPM}
+\item{normalize}{Normalize the read counts to library size? Output will then be in RPM.}
 
-\item{bin}{Bin the data. \code{bynuc}: No binning (i.e. counts per nucleotide). \code{byaa}: Bin by residue}
+\item{bin}{Bin the data. \code{bynuc}: No binning (i.e. counts per nucleotide). \code{byaa}: Bin by residue.}
 
-\item{exclude}{Drop ORFs from the count tables}
+\item{exclude}{Genes to exclude in all future analyses. This genes will also be excluded from total read count
+calculation. Note that the raw count tables will not be modified.}
 
 \item{defaults}{Default parameters of the data set.}
 }

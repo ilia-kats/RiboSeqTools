@@ -62,7 +62,9 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
     sample2 <- get_default_param(data, sample2)
     window_size <- get_default_param(data, window_size)
 
-    fref <- dplyr::filter(get_reference(data), length > (skip_5prime + window_size + skip_3prime))
+    exclude <- union(exclude, excluded(data))
+
+    fref <- dplyr::filter(get_reference(data), length > (skip_5prime + window_size + skip_3prime), !(gene %in% exclude))
     lencol <- 'length'
     if (bin == 'byaa') {
        skip_5prime <- skip_5prime %/% 3
@@ -105,7 +107,6 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
                            !!paste0(sample1, '_avg_read_density') := sum(s1) / len,
                            !!paste0(sample2, '_avg_read_density') := sum(s2) / len)
         }) %>%
-        dplyr::filter(!(gene %in% exclude)) %>%
         dplyr::ungroup()
     avgscores <- dplyr::group_by(scores, exp, gene) %>%
         dplyr::filter_if(is.numeric, dplyr::all_vars(is.finite(.))) %>%
@@ -184,6 +185,7 @@ fit_background_model <- function(data, sample1, sample2, bin, tunnelcoords=18:90
     sample2 <- get_default_param(data, sample2)
 
     coords <- tunnelcoords
+    exclude <- excluded(data)
 
     if (bin == 'byaa') {
         coords <- coords %/% 3
@@ -194,6 +196,7 @@ fit_background_model <- function(data, sample1, sample2, bin, tunnelcoords=18:90
             s1 <- Matrix::rowSums(rep[[sample1]][[bin]][,coords], na.rm=TRUE)
             s2 <- Matrix::rowSums(rep[[sample2]][[bin]][,coords], na.rm=TRUE)
             genes <- intersect(names(s1), names(s2)[s2 >= quantile(s2, use_quantile)])
+            genes <- genes[!(genes %in% exclude)]
             opt <- optim(c('s'=2,'m'=0.5), betabinom_ll, gr=betabinom_gradient, x=s1[genes], n=s1[genes] + s2[genes], method='L-BFGS-B', control=list(fnscale=-1), lower=rep(.Machine$double.eps, 2), upper=c(Inf, 1 - .Machine$double.eps))
             ret <- list(samples=list())
             ret$samples[[sample1]] <- s1
@@ -312,7 +315,7 @@ test_binding <- function(data, window_size, bpparam=BiocParallel::bpparam()) {
         rlang::abort("No background model present. Run fit_background_model first.")
 
     ref <- get_reference(data)
-
+    exclude <- excluded(data)
     rawdata <- get_data(data)
 
     winsize <- window_size
@@ -324,9 +327,9 @@ test_binding <- function(data, window_size, bpparam=BiocParallel::bpparam()) {
     }
 
     bgdata <- bgmodel$model
-    if (!all(names(rawdata) == names(bgmodel$data))) {
+    if (!all(names(rawdata) == names(bgdata))) {
         rlang::warn("Sample mismatch between data and model. Restricting p-value calculation to intersection of samples.")
-        smpls <- intersect(names(data), names(bgmodel$data))
+        smpls <- intersect(names(data), names(bgdata))
         rawdata <- rawdata[smpls]
         bgdata <- bgdata[smpls]
     }
@@ -337,7 +340,7 @@ test_binding <- function(data, window_size, bpparam=BiocParallel::bpparam()) {
             s2 <- windowed_readcounts(drep[[bgmodel$sample2]][[bgmodel$bin]], winsize)[, -(1:maxtun)]
 
             genes <- intersect(rownames(s1), rownames(s2))
-            fref <- dplyr::filter(ref, gene %in% genes)
+            fref <- dplyr::filter(ref, gene %in% genes, !(gene %in% exclude))
 
             purrr::map2_dfr(rlang::set_names(as.character(fref$gene)), fref$length, function(g, l) {
                 l <- l - maxtun

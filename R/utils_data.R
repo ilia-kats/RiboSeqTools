@@ -86,6 +86,7 @@ get_elbow_threshold <- function(xvals, yvals, upper_plateau=FALSE) {
 #'      \item{is_normalized}{A logical value indicating whether the data object contains raw or normalized
 #'          read counts.}
 #'      }
+#'      \item{excluded}{Character vector of genes excluded from analyses.}
 #' @rdname serp_data_accessors
 #' @name serp_data_accessors
 NULL
@@ -112,6 +113,7 @@ NULL
 print.serp_data <- function(data) {
     cat(sprintf('A ribosome profiling data set with %d experiments\n', length(get_data(data))))
     cat(sprintf('Counts are normalized to library size: %s\n', ifelse(is_normalized(data), 'Yes', 'No')))
+    cat(sprintf('Excluded genes: %s\n', ifelse(length(excluded(data)) > 0, paste(excluded(data)), 'None')))
     print_list_name("", " .", "", get_data(data))
     cat('\n')
 }
@@ -189,6 +191,17 @@ is_normalized.serp_data <- function(data) {
     data$normalized
 }
 
+#' @export
+excluded <- function(data) {
+    UseMethod("excluded")
+}
+
+#' @rdname serp_data_accessors
+#' @export
+excluded.serp_data <- function(data) {
+    data$exclude
+}
+
 #' Set default parameters
 #'
 #' @param data The data
@@ -259,6 +272,12 @@ set_normalized <- function(data, normalized) {
     data
 }
 
+set_excluded <- function(data, exclude) {
+    check_serp_class(data)
+    data$excluded <- exclude
+    data
+}
+
 set_total_counts <- function(data, newdata) {
     check_serp_class(data)
     data$total <- newdata
@@ -297,7 +316,9 @@ c.serp_data <- function(...) {
     outpvals <- NULL
     if (any(!sapply(dat, function(x)is.null(get_binding_pvalues(x)))))
         outpvals <- tibble::tibble()
+    outexclude <- c()
     for (d in dat[-1]) {
+        outexclude <- union(outexclude, excluded(d))
         cdata <- get_data(d)
         ctotal <- get_total_counts(d)
         cbgmodel <- get_background_model(d)
@@ -356,7 +377,8 @@ c.serp_data <- function(...) {
         set_total_counts(outtotal) %>%
         set_normalized(nrml) %>%
         set_background_model(outbgmodel) %>%
-        set_defaults(!!!outdefaults)
+        set_defaults(!!!outdefaults) %>%
+        set_excluded(outexclude)
 }
 
 combine_defaults <- function(x, y) {

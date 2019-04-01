@@ -7,6 +7,7 @@
 \alias{get_total_counts.serp_data}
 \alias{get_defaults.serp_data}
 \alias{is_normalized.serp_data}
+\alias{excluded.serp_data}
 \alias{get_background_model}
 \alias{get_binding_pvalues}
 \title{Accessors for \code{serp_data} objects}
@@ -20,6 +21,8 @@
 \method{get_defaults}{serp_data}(data)
 
 \method{is_normalized}{serp_data}(data)
+
+\method{excluded}{serp_data}(data)
 
 get_background_model(data)
 
@@ -46,6 +49,7 @@ get_binding_pvalues(data)
      \item{is_normalized}{A logical value indicating whether the data object contains raw or normalized
          read counts.}
      }
+     \item{excluded}{Character vector of genes excluded from analyses.}
 }
 \description{
 Accessors for \code{serp_data} objects

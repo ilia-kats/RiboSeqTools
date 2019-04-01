@@ -165,11 +165,13 @@ make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, binwidth=
     }, BPPARAM=bpparam)
 }
 
-metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, bpparam=BiocParallel::bpparam()) {
+metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), exclude=c(), filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, bpparam=BiocParallel::bpparam()) {
     mats <- lapply(d, function(m) {
         m <- m[[bin]]
         genes <- intersect(names(refs), rownames(m))
         cfilter <- if(is.null(filter)) genes else filter[filter %in% genes]
+        if (!is.null(exclude))
+            cfilter <- cfilter[!(cfilter %in% exclude)]
         m[cfilter,, drop=FALSE]
     })
     pars <- list(binwidth=binwidth, binmethod=binmethod, align=align)
@@ -324,6 +326,7 @@ metagene_profiles.serp_data <- function(data, profilefun, len, bin, filter=NULL,
     bin <- get_default_param(data, bin)
     binmethod <- match.arg(binmethod)
     refs <- setNames(get_reference(data)$length, get_reference(data)$gene)
+    exclude <- excluded(data)
     if (bin == 'byaa')
         refs <- refs / 3
     d <- mapply(function(d, exp) {
@@ -340,6 +343,7 @@ metagene_profiles.serp_data <- function(data, profilefun, len, bin, filter=NULL,
                                          bin,
                                          refs,
                                          extrapars=list(exp=exp, rep=rep),
+                                         exclude=exclude,
                                          filter=.filter,
                                          binwidth=binwidth,
                                          binmethod=binmethod,

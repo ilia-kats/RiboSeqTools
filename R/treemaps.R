@@ -29,7 +29,7 @@ plot_treemap <- function(data, exp, rep, sample, geneclass, title='', palette="S
         dplyr::left_join(geneclass, by='gene') %>%
         tidyr::replace_na(list(class='unknown')) %>%
         dplyr::mutate(class=factor(class, classes, ordered=TRUE)) %>%
-        dplyr::filter(!(gene %in% exclude))
+        dplyr::filter(!(gene %in% union(exclude, excluded(data))))
 
     maxreadsums <- dplyr::group_by(reads_per_gene_sample, class) %>%
         dplyr::summarize(s=sum(1/(read_sum + 1))) %$%
