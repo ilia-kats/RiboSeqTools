@@ -69,19 +69,11 @@ load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude
     bin <- match.arg(bin)
     data <- sapply(experiments, purrr::lift_dl(load_experiment), bin=bin, simplify=FALSE)
     what <- ifelse('bynuc' %in% bin, 'bynuc', 'byaa')
-    total <- sapply(data, function(exp) {
-        sapply(exp, function(rep) {
-            sapply(rep, function(sample) {
-                genes <- rownames(sample[[what]])
-                genes <- genes[!(genes %in% exclude)]
-                sum(sample[[what]][genes,])
-            }, simplify=FALSE)
-        }, simplify=FALSE)
-    }, simplify=FALSE)
 
     ref$cds_length <- ref$length %/% 3
-    ret <- list(ref=ref, data=data, total=total, normalized=FALSE)
+    ret <- list(ref=ref, data=data, normalized=FALSE)
     ret <- structure(ret, class="serp_data")
+    ret <- set_total_counts(ret, calc_total_counts(ret, what, exclude))
     if (normalize)
         ret <- normalize(ret)
     defaults <- purrr::list_modify(.defaults, !!!defaults)
@@ -90,6 +82,7 @@ load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude
         defaults$bin <- 'bynuc'
     ret$defaults <- defaults
     ret$excluded <- exclude
+    ret$downsampled <- FALSE
 
     ret
 }

@@ -7,6 +7,7 @@
 \alias{get_total_counts.serp_data}
 \alias{get_defaults.serp_data}
 \alias{is_normalized.serp_data}
+\alias{is_downsampled}
 \alias{excluded.serp_data}
 \alias{get_background_model}
 \alias{get_binding_pvalues}
@@ -21,6 +22,8 @@
 \method{get_defaults}{serp_data}(data)
 
 \method{is_normalized}{serp_data}(data)
+
+is_downsampled(data)
 
 \method{excluded}{serp_data}(data)
 
@@ -44,11 +47,13 @@ get_binding_pvalues(data)
          }
      \item{get_total_counts}{Nested named list containing toal read counts for each sample.}
      \item{get_defaults}{Named list of default parameters for this data set.}
-     \item{get_background_model}{Background model estimated by \code{\link{fit_background_model}}}
-     \item{get_binding_pvalues}{Binding p-values calculated by \code{\link{test_binding}}}
+     \item{get_background_model}{Background model estimated by \code{\link{fit_background_model}}.}
+     \item{get_binding_pvalues}{Binding p-values calculated by \code{\link{test_binding}}.}
      \item{is_normalized}{A logical value indicating whether the data object contains raw or normalized
          read counts.}
      }
+     \item{is_downsampled}{A logical value indicating whether the data object has been downsampled to
+         the lowest total read counts by \code{\link{downsample}}.}
      \item{excluded}{Character vector of genes excluded from analyses.}
 }
 \description{

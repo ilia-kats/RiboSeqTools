@@ -81,11 +81,13 @@ get_elbow_threshold <- function(xvals, yvals, upper_plateau=FALSE) {
 #'          }
 #'      \item{get_total_counts}{Nested named list containing toal read counts for each sample.}
 #'      \item{get_defaults}{Named list of default parameters for this data set.}
-#'      \item{get_background_model}{Background model estimated by \code{\link{fit_background_model}}}
-#'      \item{get_binding_pvalues}{Binding p-values calculated by \code{\link{test_binding}}}
+#'      \item{get_background_model}{Background model estimated by \code{\link{fit_background_model}}.}
+#'      \item{get_binding_pvalues}{Binding p-values calculated by \code{\link{test_binding}}.}
 #'      \item{is_normalized}{A logical value indicating whether the data object contains raw or normalized
 #'          read counts.}
 #'      }
+#'      \item{is_downsampled}{A logical value indicating whether the data object has been downsampled to
+#'          the lowest total read counts by \code{\link{downsample}}.}
 #'      \item{excluded}{Character vector of genes excluded from analyses.}
 #' @rdname serp_data_accessors
 #' @name serp_data_accessors
@@ -191,6 +193,13 @@ is_normalized.serp_data <- function(data) {
     data$normalized
 }
 
+#' @rdname serp_data_accessors
+#' @export
+is_downsampled <- function(data) {
+    check_serp_class(data)
+    data$downsampled
+}
+
 #' @export
 excluded <- function(data) {
     UseMethod("excluded")
@@ -272,6 +281,12 @@ set_normalized <- function(data, normalized) {
     data
 }
 
+set_downsampled <- function(data, downsampled) {
+    check_serp_class(data)
+    data$downsampled <- downsampled
+    data
+}
+
 set_excluded <- function(data, exclude) {
     check_serp_class(data)
     data$excluded <- exclude
@@ -282,6 +297,27 @@ set_total_counts <- function(data, newdata) {
     check_serp_class(data)
     data$total <- newdata
     data
+}
+
+calc_total_counts <- function(data, what=NULL, exclude=c()) {
+    check_serp_class(data)
+    purrr::map(get_data(data), function(exp) {
+        purrr::map(exp, function(rep) {
+            purrr::map(rep, function(sample) {
+                if (!is.null(what)) {
+                    genes <- rownames(sample[[what]])
+                    genes <- genes[!(genes %in% exclude)]
+                    sum(sample[[what]][genes,])
+                } else {
+                    median(unlist(purrr::map(sample, function(bintype) {
+                        genes <- rownames(bintype)
+                        genes <- genes[!(genes %in% exclude)]
+                        sum(bintype[genes,])
+                    })))
+                }
+            })
+        })
+    })
 }
 
 #' @export
@@ -308,6 +344,9 @@ c.serp_data <- function(...) {
     nrml <- unique(sapply(dat, is_normalized))
     if (length(nrml) > 1)
         rlang::abort("Mixture of normalized and unnormalized data given.")
+    dsmpld <- unique(sapply(dat, is_downsampled))
+    if (length(dsmpld) > 1)
+        rlang::abort("Mixture of downsampled and not downsampled data given.")
     outdat <- get_data(dat[[1]])
     outtotal <- get_total_counts(dat[[1]])
     outbgmodel <- NULL
@@ -376,6 +415,7 @@ c.serp_data <- function(...) {
         set_reference(outref) %>%
         set_total_counts(outtotal) %>%
         set_normalized(nrml) %>%
+        set_downsampled(dsmpld) %>%
         set_background_model(outbgmodel) %>%
         set_defaults(!!!outdefaults) %>%
         set_excluded(outexclude)
@@ -404,4 +444,39 @@ combine_defaults <- function(x, y) {
     out$plot_ybreaks <- dplyr::union(x$plot_ybreaks, y$plot_ybreaks)
 
     out
+}
+
+#' Downsample all samples to the same total counts
+#'
+#' The minimum total count of every sample and sample type is used as downsampling target.
+#'
+#' @param data A \code{serp_data} object
+#' @return A \code{serp_data} object
+#' @export
+downsample <- function(data) {
+    check_serp_class(data)
+    if (is_normalized(data))
+        rlang::abort("normalized data given")
+    msizes <- purrr::map(get_total_counts(data), purrr::transpose) %>%
+              purrr::transpose() %>%
+              purrr::map(unlist) %>%
+              purrr::map(min)
+    ndata <- get_data(data)
+    ndata <- purrr::map2(ndata, get_total_counts(data)[names(ndata)], function(exp, nexp) {
+        purrr::map2(exp, nexp[names(exp)], function(rep, nrep) {
+            purrr::pmap(list(sample=rep, nsample=nrep[names(rep)], samplename=names(rep)), function(sample, nsample, samplename) {
+                msize <- msizes[[samplename]]
+                if (nsample == msize)
+                    sample
+                else {
+                    purrr::map(sample, function(bintype) {
+                        Matrix(rbinom(length(bintype), as.vector(bintype), msize / nsample), nrow=nrow(bintype), ncol=ncol(bintype), dimnames=list(rownames(bintype), NULL))
+                    })
+                }
+            })
+        })
+    })
+    data <- set_data(data, ndata)
+    set_total_counts(data, calc_total_counts(data, exclude=excluded(data))) %>%
+        set_downsampled(TRUE)
 }
