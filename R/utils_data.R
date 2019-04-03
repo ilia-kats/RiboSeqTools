@@ -10,7 +10,7 @@
 #' @export
 normalize.serp_data <- function(data, exclude=c()) {
     stopifnot(!is_normalized(data))
-    set_normalized(set_data(data, mapply(function(exp, texp) {
+    data <- set_data(data, mapply(function(exp, texp) {
         mapply(function(rep, trep) {
             mapply(function(sample, tsample) {
                 sapply(sample, function(bin) {
@@ -20,7 +20,10 @@ normalize.serp_data <- function(data, exclude=c()) {
                 })
             }, rep, trep, SIMPLIFY=FALSE)
         }, exp, texp, SIMPLIFY=FALSE)
-    }, get_data(data), get_total_counts(data), SIMPLIFY=FALSE)), TRUE)
+    }, get_data(data), get_total_counts(data), SIMPLIFY=FALSE))
+    what <- get_default_param(data, bin, error=FALSE)
+    set_total_counts(data, calc_total_counts(data, what, excluded(data))) %>%
+        set_normalized(TRUE)
 }
 
 #' @export
