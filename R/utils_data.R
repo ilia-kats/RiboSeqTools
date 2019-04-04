@@ -358,7 +358,7 @@ c.serp_data <- function(...) {
     outpvals <- NULL
     if (any(!sapply(dat, function(x)is.null(get_binding_pvalues(x)))))
         outpvals <- tibble::tibble()
-    outexclude <- c()
+    outexclude <- excluded(dat[[1]])
     for (d in dat[-1]) {
         outexclude <- union(outexclude, excluded(d))
         cdata <- get_data(d)
