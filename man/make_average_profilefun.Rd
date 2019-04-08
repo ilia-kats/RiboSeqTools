@@ -16,7 +16,7 @@ make_average_profilefun(data)
 \item{data}{The data}
 }
 \value{
-A function that can be passed as \code{profilefun} to \link{\code{metagene_profiles}}
+A function that can be passed as \code{profilefun} to \code{\link{metagene_profiles}}
 }
 \description{
 Generate a default function for metagene profiles that computes the position-wise arithmetic mean

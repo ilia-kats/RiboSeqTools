@@ -53,7 +53,7 @@ load_experiment <- function(..., bin=c('bynuc', 'byaa'), exclude=NULL) {
 #'      calculation. Note that the raw count tables will not be modified.
 #' @param defaults Default parameters of the data set.
 #' @return An object of class \code{serp_data}
-#' @seealso \link{serp_data_accessors}, \link{defaults}
+#' @seealso \code{\link{serp_data_accessors}}, \code{\link{defaults}}
 #' @examples \dontrun{
 #'      data <- load_serp(DnaK=list(ip=c('data/dnak1_ip.csv', 'data/dnak2_ip.csv'),
 #'                                  tt=c('data/dnak1_tt.csv', 'data/dnak2_tt.csv')),

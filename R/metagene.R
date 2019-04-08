@@ -49,7 +49,7 @@ mat_to_df <- function(mat, boot) {
 #'      will be used.
 #' @param sample2 Name of the second sample (the denominator). If missing, the default sample2 of the data set
 #'      will be used.
-#' @return A function that can be passed as \code{profilefun} to \link{\code{metagene_profiles}}
+#' @return A function that can be passed as \code{profilefun} to \code{\link{metagene_profiles}}
 #' @export
 make_enrichment_profilefun <- function(data, sample1, sample2) {
     check_serp_class(data)
@@ -94,7 +94,7 @@ make_average_profilefun_impl <- function(featurenames) {
 #'
 #'
 #' @param data The data
-#' @return A function that can be passed as \code{profilefun} to \link{\code{metagene_profiles}}
+#' @return A function that can be passed as \code{profilefun} to \code{\link{metagene_profiles}}
 #' @export
 make_average_profilefun <- function(data) {
     UseMethod("make_average_profilefun")

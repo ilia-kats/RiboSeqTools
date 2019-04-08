@@ -51,7 +51,7 @@
 #'      \item{rank}{Ranking of the gene within the experiment and replicate. Genes are ranked by \code{lo_CI}
 #'          in descending order.}
 #'}
-#' @seealso \link{defaults}
+#' @seealso \code{\link{defaults}}
 #' @export
 binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime=0, skip_3prime=0, exclude=c(), conf.level=0.95, bpparam=BiocParallel::bpparam()) {
     check_serp_class(data)

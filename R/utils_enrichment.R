@@ -33,7 +33,7 @@ binom_ci <- function(sample1, sample2, sample1_total, sample2_total, conf.level=
 #'
 #' At each position within the gene, read counts within a \code{window_size}-wide neighborhood are summed up
 #' and used for CI calculation. A confidence interval for the ratio \eqn{\frac{\textrm{sample1}}{\textrm{sample2}}}{sample1/sample2}
-#' is calculated using \link{binom_ci}.
+#' is calculated using \code{\link{binom_ci}}.
 #'
 #' @param data A \code{serp_data} object.
 #' @param gene Name of the gene/ORF.
@@ -177,7 +177,7 @@ annotate_profile <- function(highlightregion, ...) {
 #' @param colaes Variable to use for the color scale.
 #' @template plot_annotations
 #' @return A \code{\link[ggplot2]{ggplot}} object.
-#' @seealso \link{defaults}
+#' @seealso \code{\link{defaults}}
 #' @export
 plot.serp_data <- function(data, gene, sample1, sample2, exp, rep, bin, window_size, conf.level=0.95, colaes=exp, highlightregion=list(), highlightargs=list()) {
     stopifnot(!is_normalized(data))

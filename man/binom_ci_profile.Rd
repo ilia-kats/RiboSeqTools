@@ -49,5 +49,5 @@ For a given gene, confidence intervals of enrichment (read count ratio) are calc
 \details{
 At each position within the gene, read counts within a \code{window_size}-wide neighborhood are summed up
 and used for CI calculation. A confidence interval for the ratio \eqn{\frac{\textrm{sample1}}{\textrm{sample2}}}{sample1/sample2}
-is calculated using \link{binom_ci}.
+is calculated using \code{\link{binom_ci}}.
 }

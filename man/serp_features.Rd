@@ -27,5 +27,5 @@ An object of class \code{serp_features}
 This class holds position-wise features that are independent of experiment and replicate
 }
 \seealso{
-\link{serp_feature_accessors}, \link{defaults}
+\code{\link{serp_feature_accessors}}, \code{\link{defaults}}
 }

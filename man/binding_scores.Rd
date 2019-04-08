@@ -74,5 +74,5 @@ all replicates are averaged to create a new replicate \code{avg} which is return
 individual replicates.
 }
 \seealso{
-\link{defaults}
+\code{\link{defaults}}
 }

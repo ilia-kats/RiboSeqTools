@@ -12,7 +12,7 @@
 #' @param bin Whether the features are per codon (\code{byaa}) or nucleotide (\code{bynuc}).
 #' @param defaults Default parameters for the feature set.
 #' @return An object of class \code{serp_features}
-#' @seealso \link{serp_feature_accessors}, \link{defaults}
+#' @seealso \code{\link{serp_feature_accessors}}, \code{\link{defaults}}
 #' @export
 serp_features <- function(..., ref, bin=c('bynuc', 'byaa'), defaults=list()) {
     features <- rlang::list2(...)

@@ -16,7 +16,7 @@ will be used.}
 will be used.}
 }
 \value{
-A function that can be passed as \code{profilefun} to \link{\code{metagene_profiles}}
+A function that can be passed as \code{profilefun} to \code{\link{metagene_profiles}}
 }
 \description{
 Position-wise meta-enrichment is calculated as\eqn{E_i = \frac{\sum_g \textrm{sample1}_{gi}}{\sum_g \textrm{sample2}_{gi}}}{E_i = sum(sample[,i]) / sum(sample[,i])}

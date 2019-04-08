@@ -47,5 +47,5 @@ the ORF in nucleotdes and must contain integer-valued read counts. A header must
      }
 }
 \seealso{
-\link{serp_data_accessors}, \link{defaults}
+\code{\link{serp_data_accessors}}, \code{\link{defaults}}
 }

@@ -47,5 +47,5 @@ For each position, a binomial confidence interval calculated using \code{\link{b
 plotted. Transparency reflects the total number of reads contributing to the confidence interval.
 }
 \seealso{
-\link{defaults}
+\code{\link{defaults}}
 }
