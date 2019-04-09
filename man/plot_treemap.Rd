@@ -12,7 +12,7 @@ plot_treemap(data, exp, rep, sample, geneclass, title = "",
 
 \item{exp}{Experiment name.}
 
-\item{rep}{Replicate name.}
+\item{rep}{Replicate name. If missing or NULL, read counts will be averaged over all replicates.}
 
 \item{sample}{Sample type.}
 

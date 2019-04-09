@@ -5,7 +5,7 @@
 #'
 #' @param data A \code{serp_data} object.
 #' @param exp Experiment name.
-#' @param rep Replicate name.
+#' @param rep Replicate name. If missing or NULL, read counts will be averaged over all replicates.
 #' @param sample Sample type.
 #' @param geneclass Data frame with columns \code{gene} and \code{class}. \code{class} must be an
 #'      ordered factor.
@@ -25,7 +25,18 @@ plot_treemap <- function(data, exp, rep, sample, geneclass, title='', palette="S
     if (!('unknown' %in% classes))
         classes <- c(classes, 'unknown')
 
-    reads_per_gene_sample <- tibble::enframe(Matrix::rowSums(get_data(data)[[exp]][[rep]][[sample]][[1]], na.rm=TRUE), name='gene', value='read_sum') %>%
+    reads_per_gene_sample <- if (missing(rep) || is.null(rep)) {
+        if (!is_normalized(data)) {
+            rlang::warn("Unnormalized data given, normalizing")
+            data <- normalize(data)
+        }
+        allcounts <- purrr::map(get_data(data)[[exp]], function(rep)Matrix::rowSums(rep[[sample]][[1]], na.rm=TRUE))
+        genes <- purrr::reduce(allcounts, function(x, y)intersect(names(x), names(y)))
+        purrr::reduce(allcounts, function(x, y)x[genes] + y[genes]) / length(allcounts)
+    } else {
+        Matrix::rowSums(get_data(data)[[exp]][[rep]][[sample]][[1]], na.rm=TRUE)
+    }
+    reads_per_gene_sample <- tibble::enframe(reads_per_gene_sample, name='gene', value='read_sum') %>%
         dplyr::left_join(geneclass, by='gene') %>%
         tidyr::replace_na(list(class='unknown')) %>%
         dplyr::mutate(class=factor(class, classes, ordered=TRUE)) %>%
