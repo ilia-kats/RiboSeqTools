@@ -19,7 +19,6 @@
 #'      contains artifacts.
 #' @param skip_3prime How many nucleotides to skip at the 3' end of the ORF. useful if you know that the 3' end
 #'      contains artifacts.
-#' @param exclude Genes to exclude.
 #' @param conf.level Confidence level.
 #' @param bpparam A \code{\link[BiocParallel]{BiocParallelParam-class}} object.
 #' @return A \link[tibble]{tibble} with the following columns: \describe{
@@ -43,17 +42,19 @@
 #'      \item{sample2_total_RPM}{\code{sample2_total_counts} normalized to the number of mapped reads. Note that
 #'          the actual column name is the value of \code{sample2}.}
 #'      \item{sample1_avg_read_density}{Average read density in sample 1, calculated as
-#'          \eqn{\frac{\sum_{i=1}^n \textrm{sample1}_i}{n}}{sum(sample1)/lengh}.  Note that the actual column
+#'          \eqn{\frac{\sum_{i=1}^n \textrm{sample1}_i}{n}}{sum(sample1)/lengh}. If \code{bin} is \code{byaa},
+#'          density is in reads/nucleotide, otherwise in reads/codon. Note that the actual column
 #'          name is the value of \code{sample1}.}
 #'      \item{sample2_avg_read_density}{Average read density in sample 2, calculated as
-#'          \eqn{\frac{\sum_{i=1}^n \textrm{sample2}_i}{n}}{sum(sample2)/lengh}.  Note that the actual column
+#'          \eqn{\frac{\sum_{i=1}^n \textrm{sample2}_i}{n}}{sum(sample2)/lengh}. If \code{bin} is \code{byaa},
+#'          density is in reads/nucleotide, otherwise in reads/codon. Note that the actual column
 #'          name is the value of \code{sample2}.}
 #'      \item{rank}{Ranking of the gene within the experiment and replicate. Genes are ranked by \code{lo_CI}
 #'          in descending order.}
 #'}
 #' @seealso \code{\link{defaults}}
 #' @export
-binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime=0, skip_3prime=0, exclude=c(), conf.level=0.95, bpparam=BiocParallel::bpparam()) {
+binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime=0, skip_3prime=0, conf.level=0.95, bpparam=BiocParallel::bpparam()) {
     check_serp_class(data)
     stopifnot(!is_normalized(data))
 
@@ -62,9 +63,9 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
     sample2 <- get_default_param(data, sample2)
     window_size <- get_default_param(data, window_size)
 
-    exclude <- union(exclude, excluded(data))
+    exclude <- excluded(data)
 
-    fref <- dplyr::filter(get_reference(data), length > (skip_5prime + window_size + skip_3prime), !(gene %in% exclude))
+    fref <- dplyr::filter(get_reference(data), length > (skip_5prime + window_size + skip_3prime))
     lencol <- 'length'
     if (bin == 'byaa') {
        skip_5prime <- skip_5prime %/% 3
@@ -82,6 +83,8 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
                                      BPPARAM=bpparam) %>%
         dplyr::bind_rows(.id='gene') %>%
         {suppressWarnings(dplyr::inner_join(., get_reference(data), by='gene'))} %>%
+        dplyr::group_by(exp) %>%
+        dplyr::filter(!(gene %in% exclude[exp[1]])) %>%
         dplyr::group_by(exp, rep, gene, !!rlang::sym(lencol)) %>%
         dplyr::group_map(function(.x, .y) {
             pos <- which.max(.x$lo_CI[skip_5prime:(nrow(.x) - skip_3prime)]) + skip_5prime - 1
@@ -191,18 +194,18 @@ fit_background_model <- function(data, sample1, sample2, bin, tunnelcoords=18:90
         coords <- coords %/% 3
     }
 
-    ret <- purrr::map(get_data(data), function(exp) {
+    ret <- purrr::imap(get_data(data), function(exp, nexp) {
         purrr::map(exp, function(rep) {
             s1 <- Matrix::rowSums(rep[[sample1]][[bin]][,coords], na.rm=TRUE)
             s2 <- Matrix::rowSums(rep[[sample2]][[bin]][,coords], na.rm=TRUE)
             genes <- intersect(names(s1), names(s2)[s2 >= quantile(s2, use_quantile)])
-            genes <- genes[!(genes %in% exclude)]
+            genes <- genes[!(genes %in% exclude[[nexp]])]
             opt <- optim(c('s'=2,'m'=0.5), betabinom_ll, gr=betabinom_gradient, x=s1[genes], n=s1[genes] + s2[genes], method='L-BFGS-B', control=list(fnscale=-1), lower=rep(.Machine$double.eps, 2), upper=c(Inf, 1 - .Machine$double.eps))
             ret <- list(samples=list())
             ret$samples[[sample1]] <- s1
             ret$samples[[sample2]] <- s2
             ret$quantile <- use_quantile
-            ret$used_gens <- genes
+            ret$used_genes <- genes
             ret$fit <- opt
             ret
         })
@@ -334,13 +337,13 @@ test_binding <- function(data, window_size, bpparam=BiocParallel::bpparam()) {
         bgdata <- bgdata[smpls]
     }
 
-    pvals <- BiocParallel::bpmapply(function(dexp, mexp) {
+    pvals <- BiocParallel::bpmapply(function(dexp, mexp, nexp) {
         purrr::map2_dfr(dexp, mexp, function(drep, mrep) {
             s1 <- windowed_readcounts(drep[[bgmodel$sample1]][[bgmodel$bin]], winsize)[, -(1:maxtun)]
             s2 <- windowed_readcounts(drep[[bgmodel$sample2]][[bgmodel$bin]], winsize)[, -(1:maxtun)]
 
             genes <- intersect(rownames(s1), rownames(s2))
-            fref <- dplyr::filter(ref, gene %in% genes, !(gene %in% exclude))
+            fref <- dplyr::filter(ref, gene %in% genes, !(gene %in% exclude[[nexp]]))
 
             purrr::map2_dfr(rlang::set_names(as.character(fref$gene)), fref$length, function(g, l) {
                 l <- l - maxtun
@@ -352,7 +355,7 @@ test_binding <- function(data, window_size, bpparam=BiocParallel::bpparam()) {
                 }
             }, .id='gene')
         }, .id='rep')
-    }, rawdata, bgdata, SIMPLIFY=FALSE, BPPARAM=bpparam) %>%
+    }, rawdata, bgdata, names(rawdata), SIMPLIFY=FALSE, BPPARAM=bpparam) %>%
         dplyr::bind_rows(.id='exp') %>%
         group_by(exp, rep) %>%
         mutate(p.adj=p.adjust(pval, method='BY')) %>%

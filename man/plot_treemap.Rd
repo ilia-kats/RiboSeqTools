@@ -5,7 +5,7 @@
 \title{Treemap plot of read counts per gene with an additional grouping variable}
 \usage{
 plot_treemap(data, exp, rep, sample, geneclass, title = "",
-  palette = "Set2", exclude = c())
+  palette = "Set2")
 }
 \arguments{
 \item{data}{A \code{serp_data} object.}
@@ -22,8 +22,6 @@ ordered factor.}
 \item{title}{Plot title.}
 
 \item{palette}{RColorBrewer palette to color-code the class variable}
-
-\item{exclude}{Character vector of genes to exclude from the plot}
 }
 \value{
 An invisible list from \code{\link[treemap]{treemap}}

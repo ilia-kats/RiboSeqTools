@@ -11,12 +11,11 @@
 #'      ordered factor.
 #' @param title Plot title.
 #' @param palette RColorBrewer palette to color-code the class variable
-#' @param exclude Character vector of genes to exclude from the plot
 #' @return An invisible list from \code{\link[treemap]{treemap}}
 #' @seealso \code{\link[treemap]{treemap}}
 #' @importFrom magrittr %$%
 #' @export
-plot_treemap <- function(data, exp, rep, sample, geneclass, title='', palette="Set2", exclude=c()) {
+plot_treemap <- function(data, exp, rep, sample, geneclass, title='', palette="Set2") {
     check_serp_class(data)
 
     if (ncol(geneclass) == 2 && !('class' %in% colnames(geneclass)) && 'gene' %in% colnames(geneclass))
@@ -40,7 +39,7 @@ plot_treemap <- function(data, exp, rep, sample, geneclass, title='', palette="S
         dplyr::left_join(geneclass, by='gene') %>%
         tidyr::replace_na(list(class='unknown')) %>%
         dplyr::mutate(class=factor(class, classes, ordered=TRUE)) %>%
-        dplyr::filter(!(gene %in% union(exclude, excluded(data))))
+        dplyr::filter(!(gene %in% excluded(data)[[exp]]))
 
     maxreadsums <- dplyr::group_by(reads_per_gene_sample, class) %>%
         dplyr::summarize(s=sum(1/(read_sum + 1))) %$%

@@ -50,7 +50,8 @@ load_experiment <- function(..., bin=c('bynuc', 'byaa'), exclude=NULL) {
 #' @param normalize Normalize the read counts to library size? Output will then be in RPM.
 #' @param bin Bin the data. \code{bynuc}: No binning (i.e. counts per nucleotide). \code{byaa}: Bin by residue.
 #' @param exclude Genes to exclude in all future analyses. This genes will also be excluded from total read count
-#'      calculation. Note that the raw count tables will not be modified.
+#'      calculation. Note that the raw count tables will not be modified. Named list with names corresponding to
+#'      experiments.
 #' @param defaults Default parameters of the data set.
 #' @return An object of class \code{serp_data}
 #' @seealso \code{\link{serp_data_accessors}}, \code{\link{defaults}}
@@ -63,7 +64,7 @@ load_experiment <- function(..., bin=c('bynuc', 'byaa'), exclude=NULL) {
 #'                        bin='byaa')
 #'      }
 #' @export
-load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude=c(), defaults=list()) {
+load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude=list(), defaults=list()) {
     experiments <- rlang::list2(...)
     stopifnot('gene' %in% colnames(ref) && 'length' %in% colnames(ref))
     bin <- match.arg(bin)
@@ -73,7 +74,8 @@ load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude
     ref$cds_length <- ref$length %/% 3
     ret <- list(ref=ref, data=data, normalized=FALSE)
     ret <- structure(ret, class="serp_data")
-    ret <- set_total_counts(ret, calc_total_counts(ret, what, exclude))
+    ret <- set_excluded(ret, exclude)
+    ret <- set_total_counts(ret, calc_total_counts(ret, what))
     if (normalize)
         ret <- normalize(ret)
     defaults <- purrr::list_modify(.defaults, !!!defaults)
@@ -81,8 +83,6 @@ load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude
     if (defaults$bin == 'byaa' && !('byaa' %in% bin))
         defaults$bin <- 'bynuc'
     ret$defaults <- defaults
-    ret$excluded <- exclude
-    ret$downsampled <- FALSE
 
-    ret
+    set_downsampled(ret, FALSE)
 }

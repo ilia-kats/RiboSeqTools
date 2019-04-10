@@ -4,12 +4,10 @@
 \alias{normalize.serp_data}
 \title{Perform library-size normalization}
 \usage{
-\method{normalize}{serp_data}(data, exclude = c())
+\method{normalize}{serp_data}(data)
 }
 \arguments{
 \item{data}{A \code{serp_data} object.}
-
-\item{exclude}{ORFs to exclude. Note that excluded ORFs still contribute to the total read number.}
 }
 \value{
 A \code{serp_data} object.

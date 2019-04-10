@@ -5,7 +5,7 @@
 \title{Import ribosome profiling data}
 \usage{
 load_serp(..., ref, normalize = FALSE, bin = c("bynuc", "byaa"),
-  exclude = c(), defaults = list())
+  exclude = list(), defaults = list())
 }
 \arguments{
 \item{...}{Name-value pairs of lists. The name of each argument will be the name of an experiment.
@@ -24,7 +24,8 @@ table of one replicate experiment. Replicate order must match between sample typ
 \item{bin}{Bin the data. \code{bynuc}: No binning (i.e. counts per nucleotide). \code{byaa}: Bin by residue.}
 
 \item{exclude}{Genes to exclude in all future analyses. This genes will also be excluded from total read count
-calculation. Note that the raw count tables will not be modified.}
+calculation. Note that the raw count tables will not be modified. Named list with names corresponding to
+experiments.}
 
 \item{defaults}{Default parameters of the data set.}
 }

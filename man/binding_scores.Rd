@@ -5,7 +5,7 @@
 \title{Calculate binding scores for each gene in a SeRP experiment}
 \usage{
 binding_scores(data, sample1, sample2, bin, window_size, skip_5prime = 0,
-  skip_3prime = 0, exclude = c(), conf.level = 0.95,
+  skip_3prime = 0, conf.level = 0.95,
   bpparam = BiocParallel::bpparam())
 }
 \arguments{
@@ -28,8 +28,6 @@ contains artifacts.}
 
 \item{skip_3prime}{How many nucleotides to skip at the 3' end of the ORF. useful if you know that the 3' end
 contains artifacts.}
-
-\item{exclude}{Genes to exclude.}
 
 \item{conf.level}{Confidence level.}
 
@@ -57,10 +55,12 @@ A \link[tibble]{tibble} with the following columns: \describe{
      \item{sample2_total_RPM}{\code{sample2_total_counts} normalized to the number of mapped reads. Note that
          the actual column name is the value of \code{sample2}.}
      \item{sample1_avg_read_density}{Average read density in sample 1, calculated as
-         \eqn{\frac{\sum_{i=1}^n \textrm{sample1}_i}{n}}{sum(sample1)/lengh}.  Note that the actual column
+         \eqn{\frac{\sum_{i=1}^n \textrm{sample1}_i}{n}}{sum(sample1)/lengh}. If \code{bin} is \code{byaa},
+         density is in reads/nucleotide, otherwise in reads/codon. Note that the actual column
          name is the value of \code{sample1}.}
      \item{sample2_avg_read_density}{Average read density in sample 2, calculated as
-         \eqn{\frac{\sum_{i=1}^n \textrm{sample2}_i}{n}}{sum(sample2)/lengh}.  Note that the actual column
+         \eqn{\frac{\sum_{i=1}^n \textrm{sample2}_i}{n}}{sum(sample2)/lengh}. If \code{bin} is \code{byaa},
+         density is in reads/nucleotide, otherwise in reads/codon. Note that the actual column
          name is the value of \code{sample2}.}
      \item{rank}{Ranking of the gene within the experiment and replicate. Genes are ranked by \code{lo_CI}
          in descending order.}

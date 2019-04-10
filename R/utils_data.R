@@ -4,30 +4,28 @@
 #' in the respective sample and multiplied by \eqn{10^6}.
 #'
 #' @param data A \code{serp_data} object.
-#' @param exclude ORFs to exclude. Note that excluded ORFs still contribute to the total read number.
 #' @return A \code{serp_data} object.
 #' @rdname normalize
 #' @export
-normalize.serp_data <- function(data, exclude=c()) {
+normalize.serp_data <- function(data) {
     stopifnot(!is_normalized(data))
-    data <- set_data(data, mapply(function(exp, texp) {
-        mapply(function(rep, trep) {
-            mapply(function(sample, tsample) {
+    exclude <- excluded(data)
+    data <- set_data(data, purrr::pmap(list(exp=get_data(data), texp=get_total_counts(data)), function(exp, texp) {
+        purrr::pmap(list(rep=exp, trep=texp), function(rep, trep) {
+            purrr::pmap(list(sample=rep, tsample=trep), function(sample, tsample) {
                 sapply(sample, function(bin) {
-                    toinclude <- rownames(bin)
-                    toinclude <- toinclude[!(toinclude %in% exclude)]
-                    bin[toinclude,] / tsample * 1e6
+                    bin / tsample * 1e6
                 })
-            }, rep, trep, SIMPLIFY=FALSE)
-        }, exp, texp, SIMPLIFY=FALSE)
-    }, get_data(data), get_total_counts(data), SIMPLIFY=FALSE))
+            })
+        })
+    }))
     what <- get_default_param(data, bin, error=FALSE)
-    set_total_counts(data, calc_total_counts(data, what, excluded(data))) %>%
+    set_total_counts(data, calc_total_counts(data, what)) %>%
         set_normalized(TRUE)
 }
 
 #' @export
-normalize <- function(data, exclude=c()) {
+normalize <- function(data) {
     UseMethod("normalize")
 }
 
@@ -118,7 +116,14 @@ NULL
 print.serp_data <- function(data) {
     cat(sprintf('A ribosome profiling data set with %d experiments\n', length(get_data(data))))
     cat(sprintf('Counts are normalized to library size: %s\n', ifelse(is_normalized(data), 'Yes', 'No')))
-    cat(sprintf('Excluded genes: %s\n', ifelse(length(excluded(data)) > 0, paste(excluded(data)), 'None')))
+
+    cat('Excluded genes:')
+    if (length(excluded(data)) == 0) {
+        cat(' None\n')
+    } else {
+        cat('\n  ', paste(purrr::imap(excluded(data), function(exc, exp)sprintf("%s: %s", exp, paste(exc, collapse=', '))), collapse='\n  '), sep='')
+    }
+    cat(sprintf('Excluded genes:\n  %s\n', ifelse(length(excluded(data)) > 0,  'None')))
     print_list_name("", " .", "", get_data(data))
     cat('\n')
 }
@@ -226,14 +231,24 @@ set_defaults <- function(data, ...) {
 #' @rdname set_defaults
 #' @export
 set_defaults.serp_data <- function(data, ...) {
-    data$defaults <- purrr::list_modify(data$defaults, ...)
+    ndefs <- rlang::list2(...)
+    if (is.null(data$defaults)) {
+        data$defaults <- ndefs
+    } else {
+        data$defaults[names(ndefs)] <- ndefs
+    }
     data
 }
 
 #' @rdname set_defaults
 #' @export
 set_defaults.serp_features <- function(data, ...) {
-    data$defaults <- ifelse(is.null(data$defaults), rlang::list2(...), purrr::list_modify(data$defaults, ...))
+    ndefs <- rlang::list2(...)
+    if (is.null(data$defaults)) {
+        data$defaults <- ndefs
+    } else {
+        data$defaults[names(ndefs)] <- ndefs
+    }
     data
 }
 
@@ -302,19 +317,19 @@ set_total_counts <- function(data, newdata) {
     data
 }
 
-calc_total_counts <- function(data, what=NULL, exclude=c()) {
+calc_total_counts <- function(data, what=NULL) {
     check_serp_class(data)
-    purrr::map(get_data(data), function(exp) {
+    purrr::map2(get_data(data), excluded(data)[names(get_data(data))], function(exp, exc) {
         purrr::map(exp, function(rep) {
             purrr::map(rep, function(sample) {
                 if (!is.null(what)) {
                     genes <- rownames(sample[[what]])
-                    genes <- genes[!(genes %in% exclude)]
+                    genes <- genes[!(genes %in% exc)]
                     sum(sample[[what]][genes,])
                 } else {
                     median(unlist(purrr::map(sample, function(bintype) {
                         genes <- rownames(bintype)
-                        genes <- genes[!(genes %in% exclude)]
+                        genes <- genes[!(genes %in% exc)]
                         sum(bintype[genes,])
                     })))
                 }
@@ -327,6 +342,7 @@ calc_total_counts <- function(data, what=NULL, exclude=c()) {
 `[.serp_data` <- function(data, i) {
     data <- set_data(data, get_data(data)[i])
     data <- set_total_counts(data, get_total_counts(data)[i])
+    data <- set_excluded(data, excluded(data)[i])
 
     bgmodel <- get_background_model(data)
     if (!is.null(bgmodel)) {
@@ -360,7 +376,6 @@ c.serp_data <- function(...) {
         outpvals <- tibble::tibble()
     outexclude <- excluded(dat[[1]])
     for (d in dat[-1]) {
-        outexclude <- union(outexclude, excluded(d))
         cdata <- get_data(d)
         ctotal <- get_total_counts(d)
         cbgmodel <- get_background_model(d)
@@ -406,6 +421,12 @@ c.serp_data <- function(...) {
                     outbgmodel <- c(outbgmodel, cbgmodel[i])
                 if (!is.null(cpvals))
                     outpvals <- dplyr::bind_rows(outpvals, dplyr::filter(cpvals, exp == i))
+            }
+
+            if (i %in% names(outeclude)) {
+                outexclude[[i]] <- union(outexclude[[i]], excluded(d)[[i]])
+            } else if (!is.null(excluded(d)[[i]])) {
+                outexclude[[i]] <- excluded(d)[[i]]
             }
         }
     }
@@ -480,6 +501,6 @@ downsample <- function(data) {
         })
     })
     data <- set_data(data, ndata)
-    set_total_counts(data, calc_total_counts(data, exclude=excluded(data))) %>%
+    set_total_counts(data, calc_total_counts(data)) %>%
         set_downsampled(TRUE)
 }

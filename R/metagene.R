@@ -329,35 +329,30 @@ metagene_profiles.serp_data <- function(data, profilefun, len, bin, filter=NULL,
     exclude <- excluded(data)
     if (bin == 'byaa')
         refs <- refs / 3
-    d <- mapply(function(d, exp) {
-        ret <- mapply(function(d, rep) {
-                        .filter <- filter
-                        if (is.list(.filter)) {
-                            .filter <- .filter[[exp]]
-                            if (is.list(.filter))
-                            .filter <- .filter[[rep]]
-                        }
-                        metagene_profile(d,
-                                         profilefun,
-                                         len,
-                                         bin,
-                                         refs,
-                                         extrapars=list(exp=exp, rep=rep),
-                                         exclude=exclude,
-                                         filter=.filter,
-                                         binwidth=binwidth,
-                                         binmethod=binmethod,
-                                         normalizefun=normalizefun,
-                                         align=align,
-                                         nboot=nboot,
-                                         bpparam=bpparam)
-                    },
-                    d,
-                    if(!is.null(names(d))) names(d) else 1:length(d),
-                    SIMPLIFY=FALSE)
-        bind_rows(ret, .id='rep')
-    }, get_data(data), names(get_data(data)), SIMPLIFY=FALSE)
-    d <- bind_rows(d, .id='exp')
+    d <- purrr::imap_dfr(get_data(data), function(d, exp) {
+        purrr::imap_dfr(d, function(d, rep) {
+            .filter <- filter
+            if (is.list(.filter)) {
+                .filter <- .filter[[exp]]
+                if (is.list(.filter))
+                .filter <- .filter[[rep]]
+            }
+            metagene_profile(.x,
+                                profilefun,
+                                len,
+                                bin,
+                                refs,
+                                extrapars=list(exp=exp, rep=rep),
+                                exclude=exclude[[exp]],
+                                filter=.filter,
+                                binwidth=binwidth,
+                                binmethod=binmethod,
+                                normalizefun=normalizefun,
+                                align=align,
+                                nboot=nboot,
+                                bpparam=bpparam)
+        }, .id='rep')
+    }, .id='exp')
     if (nrow(d) > 0)
         d <- mutate(d, id=as.factor(id))
     d
