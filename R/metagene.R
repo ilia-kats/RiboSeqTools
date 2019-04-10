@@ -337,20 +337,20 @@ metagene_profiles.serp_data <- function(data, profilefun, len, bin, filter=NULL,
                 if (is.list(.filter))
                 .filter <- .filter[[rep]]
             }
-            metagene_profile(.x,
-                                profilefun,
-                                len,
-                                bin,
-                                refs,
-                                extrapars=list(exp=exp, rep=rep),
-                                exclude=exclude[[exp]],
-                                filter=.filter,
-                                binwidth=binwidth,
-                                binmethod=binmethod,
-                                normalizefun=normalizefun,
-                                align=align,
-                                nboot=nboot,
-                                bpparam=bpparam)
+            metagene_profile(d,
+                             profilefun,
+                             len,
+                             bin,
+                             refs,
+                             extrapars=list(exp=exp, rep=rep),
+                             exclude=exclude[[exp]],
+                             filter=.filter,
+                             binwidth=binwidth,
+                             binmethod=binmethod,
+                             normalizefun=normalizefun,
+                             align=align,
+                             nboot=nboot,
+                             bpparam=bpparam)
         }, .id='rep')
     }, .id='exp')
     if (nrow(d) > 0)
