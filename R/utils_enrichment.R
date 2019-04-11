@@ -46,6 +46,8 @@ binom_ci <- function(sample1, sample2, sample1_total, sample2_total, conf.level=
 #'      by codoons
 #' @param conf.level Confidence level.
 #' @return A \link[tibble]{tibble} with the following columns: \describe{
+#'      \item{exp}{Experiment name.}
+#'      \item{rep}{Replicate name.}
 #'      \item{winmid}{Center of the neighborhood for which the CI was calculated.}
 #'      \item{sample1}{Raw counts of sample1 at position \code{winmid}. Note that the actual column name
 #'              is the value of \code{sample1}.}
