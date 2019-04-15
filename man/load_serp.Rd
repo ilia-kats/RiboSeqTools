@@ -25,6 +25,7 @@ table of one replicate experiment. Replicate order must match between sample typ
 
 \item{exclude}{Genes to exclude in all future analyses. This genes will also be excluded from total read count
 calculation. Note that the raw count tables will not be modified. Named list with names corresponding to
+experiments. If a character vector of gene names is given, these genes will be excluded from all
 experiments.}
 
 \item{defaults}{Default parameters of the data set.}

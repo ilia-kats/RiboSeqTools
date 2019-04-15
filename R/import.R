@@ -51,6 +51,7 @@ load_experiment <- function(..., bin=c('bynuc', 'byaa'), exclude=NULL) {
 #' @param bin Bin the data. \code{bynuc}: No binning (i.e. counts per nucleotide). \code{byaa}: Bin by residue.
 #' @param exclude Genes to exclude in all future analyses. This genes will also be excluded from total read count
 #'      calculation. Note that the raw count tables will not be modified. Named list with names corresponding to
+#'      experiments. If a character vector of gene names is given, these genes will be excluded from all
 #'      experiments.
 #' @param defaults Default parameters of the data set.
 #' @return An object of class \code{serp_data}
@@ -68,6 +69,8 @@ load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude
     experiments <- rlang::list2(...)
     stopifnot('gene' %in% colnames(ref) && 'length' %in% colnames(ref))
     bin <- match.arg(bin)
+    if (!is.list(exclude) && is.character(exclude))
+        exclude <- purrr::map(experiments, function(...)exclude)
     data <- sapply(experiments, purrr::lift_dl(load_experiment), bin=bin, simplify=FALSE)
     what <- ifelse('bynuc' %in% bin, 'bynuc', 'byaa')
 
