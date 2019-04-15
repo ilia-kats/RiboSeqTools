@@ -423,7 +423,7 @@ c.serp_data <- function(...) {
                     outpvals <- dplyr::bind_rows(outpvals, dplyr::filter(cpvals, exp == i))
             }
 
-            if (i %in% names(outeclude)) {
+            if (i %in% names(outexclude)) {
                 outexclude[[i]] <- union(outexclude[[i]], excluded(d)[[i]])
             } else if (!is.null(excluded(d)[[i]])) {
                 outexclude[[i]] <- excluded(d)[[i]]
