@@ -73,6 +73,8 @@ binom_ci_profile <- function(data, gene, sample1, sample2, exp, rep, bin, window
     binmissing <- missing(bin)
 
     idx <- which(get_reference(data)$gene == gene)
+    if (!length(idx)) rlang::abort("unknown gene")
+
     genelen <- get_reference(data)$length[idx]
     cdslen <- get_reference(data)$cds_length[idx]
 
