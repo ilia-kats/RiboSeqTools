@@ -256,9 +256,9 @@ plot_background_model <- function(data, type=c('density', 'ratio')) {
             }, .id='rep')
         }, .id='exp')
         ggplot2::ggplot(counts) +
-            ggplot2::geom_histogram(aes(!!rlang::sym(s1) / (!!rlang::sym(s1) + !!rlang::sym(s2)), stat(density)), binwidth=0.01) +
-            geom_line(aes(x, density), data=densities, color='red') +
-            facet_grid(rep~exp)
+            ggplot2::geom_histogram(ggplot2::aes(!!rlang::sym(s1) / (!!rlang::sym(s1) + !!rlang::sym(s2)), stat(density)), binwidth=0.01) +
+            ggplot2::geom_line(ggplot2::aes(x, density), data=densities, color='red') +
+            ggplot2::facet_grid(rep~exp)
     } else if (type == 'ratio') {
         counts <- mutate(counts, denom=!!rlang::sym(s1)+!!rlang::sym(s2))
         rcounts <- purrr::map_dfr(bgmodel$model, function(exp) {
@@ -269,12 +269,12 @@ plot_background_model <- function(data, type=c('density', 'ratio')) {
             }, .id='rep')
         }, .id='exp')
         bind_rows(counts, rcounts) %>%
-            ggplot(aes(!!rlang::sym(s2), !!rlang::sym(s1)/denom, shape=type, color=type)) +
-            geom_point(alpha=0.5) +
-            scale_x_log10() +
-            scale_shape_manual(values=c(observed=1, random=20)) +
-            scale_color_manual(values=c(observed='black', random='red')) +
-            facet_grid(rep~exp)
+            ggplot2::ggplot(ggplot2::aes(!!rlang::sym(s2), !!rlang::sym(s1)/denom, shape=type, color=type)) +
+            ggplot2::geom_point(alpha=0.5) +
+            ggplot2::scale_x_log10() +
+            ggplot2::scale_shape_manual(values=c(observed=1, random=20)) +
+            ggplot2::ggplot2::scale_color_manual(values=c(observed='black', random='red')) +
+            ggplot2::facet_grid(rep~exp)
     }
 }
 
