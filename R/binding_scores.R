@@ -273,7 +273,7 @@ plot_background_model <- function(data, type=c('density', 'ratio')) {
             ggplot2::geom_point(alpha=0.5) +
             ggplot2::scale_x_log10() +
             ggplot2::scale_shape_manual(values=c(observed=1, random=20)) +
-            ggplot2::ggplot2::scale_color_manual(values=c(observed='black', random='red')) +
+            ggplot2::scale_color_manual(values=c(observed='black', random='red')) +
             ggplot2::facet_grid(rep~exp)
     }
 }
