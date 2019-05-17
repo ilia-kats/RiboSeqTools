@@ -20,6 +20,7 @@ Imports:
     grid,
     rmutil,
     BiocParallel
+Suggests: h5
 License: GPL-2
 Encoding: UTF-8
 LazyData: true

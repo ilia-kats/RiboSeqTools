@@ -34,15 +34,23 @@ experiments.}
 An object of class \code{serp_data}
 }
 \description{
-Import read count tables. Expects each count table to be a csv file with each row representing a different
-ORF and the first column containing the ORF names. Other columns represent positions from the 5' end of of
-the ORF in nucleotdes and must contain integer-valued read counts. A header must be present.
+Import read count tables. Currently, CSV and HDF5 files are accepted.
+}
+\details{
+CSV files are expected to have one row per ORF with the first column containing the ORF names.
+Other columns represent positions from the 5' end of of the ORF in nucleotides and must contain
+integer-valued read counts. A header must be present.
+
+HDF5 files are assumed to contain one data set per gene at the top level. Each data set must be
+a two-column matrix, the first column containing the position from the 5' end of the ORF in nucleotides
+and the second column containing the associated integer-valued read counts. Data set names are assumed
+to be gene names.
 }
 \examples{
 \dontrun{
      data <- load_serp(DnaK=list(ip=c('data/dnak1_ip.csv', 'data/dnak2_ip.csv'),
                                  tt=c('data/dnak1_tt.csv', 'data/dnak2_tt.csv')),
-                       TF=list(ip=c('datatf1_ip.csv', 'data/tf2_ip.csv'),
+                       TF=list(ip=c('data/tf1_ip.csv', 'data/tf2_ip.csv'),
                                tt=c('data/tf1_tt.csv', 'data/tf2_tt.csv')),
                        ref=reference_df,
                        bin='byaa')

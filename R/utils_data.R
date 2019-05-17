@@ -123,7 +123,6 @@ print.serp_data <- function(data) {
     } else {
         cat('\n  ', paste(purrr::imap(excluded(data), function(exc, exp)sprintf("%s: %s", exp, paste(exc, collapse=', '))), collapse='\n  '), sep='')
     }
-    cat(sprintf('Excluded genes:\n  %s\n', ifelse(length(excluded(data)) > 0,  'None')))
     print_list_name("", " .", "", get_data(data))
     cat('\n')
 }
