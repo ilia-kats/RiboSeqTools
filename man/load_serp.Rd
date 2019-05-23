@@ -17,7 +17,9 @@ table of one replicate experiment. Replicate order must match between sample typ
 \describe{
     \item{gene}{Gene/ORF name. Must match the names given in the read count tables.}
     \item{length}{ORF length in nucleotides.}
-}}
+}
+If all input files are HDF5 files, this argument can be missing, in which case a refence is
+created from the union of all inputs files.}
 
 \item{normalize}{Normalize the read counts to library size? Output will then be in RPM.}
 

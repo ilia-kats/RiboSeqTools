@@ -10,11 +10,49 @@ import_csv <- function(path) {
     Matrix.:Matrix(m, sparse=TRUE)
 }
 
-import_hdf5 <- function(path, ref) {
+test_hdf5 <- function(path) {
+    h5 <- file(path, "rb", raw=TRUE)
+    magicnr <- readBin(h5, "raw", n=8)
+    close(h5)
+    if (magicnr[1] == 0x89 &&
+        magicnr[2] == 0x48 &&
+        magicnr[3] == 0x44 &&
+        magicnr[4] == 0x46 &&
+        magicnr[5] == 0x0d &&
+        magicnr[6] == 0x0a &&
+        magicnr[7] == 0x1a &&
+        magicnr[8] == 0x0a)
+        TRUE
+    else
+        FALSE
+}
+
+require_h5 <- function() {
     if (!requireNamespace("h5", quietly=TRUE))
         rlang::abort("h5 package not found, please install the h5 package to read HDF5 files")
+}
 
-    f <- h5::h5file(path)
+make_ref_from_hdf5 <- function(paths) {
+    require_h5()
+    genes <- purrr::map(paths, function(path) {
+        f <- h5::h5file(path, "r")
+        genes <- h5::list.datasets(f, full.names=FALSE)
+        genes <- purrr::map_int(rlang::set_names(genes), function(g) {
+            dset <- h5::openDataSet(f, g)
+            as.integer(h5::h5attr(dset, "cds_length"))
+        })
+        h5::h5close(f)
+        genes
+    }) %>%
+        purrr::flatten_int() %>%
+        tibble::enframe(name="gene", value="length") %>%
+        dplyr::distinct()
+}
+
+import_hdf5 <- function(path, ref) {
+    require_h5()
+
+    f <- h5::h5file(path, "r")
     genes <- h5::list.datasets(f, full.names=FALSE)
     m <- mapply(function(g, i) {
         dset <- h5::openDataSet(f, g)[]
@@ -34,7 +72,7 @@ load_experiment <- function(..., .ref, .bin=c('bynuc', 'byaa'), .exclude=NULL) {
         ret <- sapply(paths, function(path) {
             ret <- list()
 
-            if (endsWith(path, "h5") || endsWith(path, "hdf5"))
+            if (test_hdf5(path))
                 m <- import_hdf5(path, .ref)
             else
                 m <- import_csv(path)
@@ -77,6 +115,8 @@ load_experiment <- function(..., .ref, .bin=c('bynuc', 'byaa'), .exclude=NULL) {
 #'          \item{gene}{Gene/ORF name. Must match the names given in the read count tables.}
 #'          \item{length}{ORF length in nucleotides.}
 #'      }
+#'      If all input files are HDF5 files, this argument can be missing, in which case a refence is
+#'      created from the union of all inputs files.
 #' @param normalize Normalize the read counts to library size? Output will then be in RPM.
 #' @param bin Bin the data. \code{bynuc}: No binning (i.e. counts per nucleotide). \code{byaa}: Bin by residue.
 #' @param exclude Genes to exclude in all future analyses. This genes will also be excluded from total read count
@@ -97,7 +137,13 @@ load_experiment <- function(..., .ref, .bin=c('bynuc', 'byaa'), .exclude=NULL) {
 #' @export
 load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude=list(), defaults=list()) {
     experiments <- rlang::list2(...)
-    stopifnot('gene' %in% colnames(ref) && 'length' %in% colnames(ref))
+
+    if (missing(ref) && all(sapply(unlist(experiments), test_hdf5))) {
+        ref <- make_ref_from_hdf5(unlist(experiments))
+    } else if (!('gene' %in% colnames(ref)) || !('length' %in% colnames(ref))) {
+        rlang::abort("reference must have columns 'gene'  and 'length'")
+    }
+
     bin <- match.arg(bin)
     if (!is.list(exclude) && is.character(exclude))
         exclude <- purrr::map(experiments, function(...)exclude)
