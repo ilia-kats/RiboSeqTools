@@ -166,7 +166,7 @@ make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, binwidth=
 }
 
 metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), exclude=c(), filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, bpparam=BiocParallel::bpparam()) {
-    genesintersect <- purrr::reduce(intersect, lapply(d, rownames))
+    genesintersect <- purrr::reduce(lapply(d, function(x)rownames(x[[bin]])), intersect)
     mats <- lapply(d, function(m) {
         m <- m[[bin]]
         genes <- intersect(names(refs), genesintersect)
@@ -361,7 +361,7 @@ metagene_profiles.serp_data <- function(data, profilefun, len, bin, filter=NULL,
         }, .id='rep')
     }, .id='exp')
     if (nrow(d) > 0)
-        d <- mutate(d, id=as.factor(id))
+        d <- dplyr::mutate(d, id=as.factor(id))
     d
 }
 
