@@ -67,11 +67,14 @@ Calculates a metagene profile from the full data set as well as bootstrapping sa
 Profiles are calculated separately for each experiment and replicate.
 }
 \details{
-Data matrices are first filtered to contain only genes in \code{filter}. They are then passed to
-\code{normalizefun} as named arguments, with names corresponding to sample type. If \code{align}
-is one of \code{start} or \code{stop}, normalized data matrices are first aligned, then binned
-and trimmed to \code{len} columns. If \code{align} is a vector of positions, data matrices are
-centered using \code{\link{make_aligned_mats}} without binning for performance reasons, binning
+Data matrices are first filtered to contain the same set of genes (i.e. only the intersection of
+genes contained in all matrices is retained). For \code{serp_data} objects, this filtering is performed
+separately for each experiment and replicate. Data matrices are the filtered to contain only genes in
+\code{filter}, if \code{filter is given}. Matrices are then passed to \code{normalizefun}
+as named arguments, with names corresponding to sample type. If \code{align}is one of \code{start}
+or \code{stop}, normalized data matrices are first aligned, then binned and trimmed to \code{len}
+columns. If \code{align} is a vector of positions, data matrices are centered using
+\code{\link{make_aligned_mats}} without binning for performance reasons, binning
 is performed on the final profiles. The centered and trimmed data matrices are passed as named
 arguments to \code{profilefun}, which calculates the final profiles. \code{profilefun} can return
 either a single numeric vector, representing a single profile calculated from all data matrices,
