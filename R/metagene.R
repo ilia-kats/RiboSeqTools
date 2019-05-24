@@ -174,7 +174,7 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
             cfilter <- cfilter[!(cfilter %in% exclude)]
         m[cfilter,, drop=FALSE]
     })
-    pars <- list(binwidth=binwidth, binmethod=binmethod, align=align)
+    pars <- list(binwidth=binwidth, binmethod=binmethod, align=align, lengths=refs)
 
     if (!is.null(normalizefun)) {
         mats <- rlang::exec(normalizefun, !!!mats, !!!extrapars, !!!pars)
@@ -236,8 +236,10 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
                 }, rownames(m), refs[rownames(m)]))
             }
         }, mats, len, SIMPLIFY=FALSE)
-    } else {
+    } else if (all(is.numeric(align))) {
         mats <- make_aligned_mats(mats, align, refs, len, binwidth=1, binmethod='sum')
+    } else {
+        rlang::abort("unrecognized align parameter")
     }
     all <- rlang::exec(profilefun, !!!mats, !!!extrapars, !!!pars)
     boot <- rlang::exec(do_boot, n=nboot, profilefun=profilefun, mats=mats, bpparam=bpparam, !!!extrapars, !!!pars)
@@ -263,9 +265,9 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
 
         # this is faster than binning in make_aligned_mats
         bm <- switch(binmethod, sum=sum, mean=mean)
-        d <- group_by_at(d, vars(-summary)) %>%
-            summarize(summary=bm(summary)) %>%
-            ungroup()
+        d <- dplyr::group_by_at(d, vars(-summary)) %>%
+            dplyr::summarize(summary=bm(summary)) %>%
+            dplyr::ungroup()
     }
     d
 }
@@ -288,8 +290,9 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
 #' @param data The data.
 #' @param profilefun Function that calculates a profile. Must accept named arguments for all sample types
 #'      present in the data set as well as \code{exp} (experiment name), \code{rep} (replicate name),
-#'      \code{binwidth} (bin width), \code{binmethod} (binning method), \code{align} (alignment). Must return
-#'      either a single numeric vector or a named list of numeric vectors.
+#'      \code{binwidth} (bin width), \code{binmethod} (binning method), \code{align} (alignment),
+#'      \code{lengths} (named vector of gene lengths). Must return either a single numeric vector or
+#'      a named list of numeric vectors.
 #' @param len Length of the profile.
 #' @param bin Bin level (\code{bynuc} or \code{byaa}). If missing, the default binning level of the data set
 #'      will be used

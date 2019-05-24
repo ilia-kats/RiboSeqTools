@@ -23,8 +23,9 @@ metagene_profiles(data, ...)
 
 \item{profilefun}{Function that calculates a profile. Must accept named arguments for all sample types
 present in the data set as well as \code{exp} (experiment name), \code{rep} (replicate name),
-\code{binwidth} (bin width), \code{binmethod} (binning method), \code{align} (alignment). Must return
-either a single numeric vector or a named list of numeric vectors.}
+\code{binwidth} (bin width), \code{binmethod} (binning method), \code{align} (alignment),
+\code{lengths} (named vector of gene lengths). Must return either a single numeric vector or
+a named list of numeric vectors.}
 
 \item{len}{Length of the profile.}
 
