@@ -19,7 +19,7 @@ do_boot <- function(n, profilefun, mats, bpparam=BiocParallel::bpparam(), ...) {
         rlang::exec(profilefun, !!!m, !!!pars)
     }, 1:n, SIMPLIFY=FALSE, BPPARAM=bpparam)
     if (all(sapply(res, is.list))) {
-        res <- transpose(res)
+        res <- purrr::transpose(res)
         res <- lapply(res, function(x)rlang::exec(rbind, !!!x, deparse.level=0))
     } else {
         res <- rlang::exec(rbind, !!!res, deparse.level=0)
@@ -249,10 +249,10 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
         all <- lapply(all, mat_to_df, FALSE)
         boot <- lapply(boot, mat_to_df, TRUE)
 
-        all <- bind_rows(all, .id='type')
-        boot <- bind_rows(boot, .id='type')
+        all <- dplyr::bind_rows(all, .id='type')
+        boot <- dplyr::bind_rows(boot, .id='type')
     }
-    d <- bind_rows(all, boot)
+    d <- dplyr::bind_rows(all, boot)
     d$pos <- d$pos - 1
     if (length(align) == 1 && align %in% c('start', 'stop')) {
         if (align == 'stop')
