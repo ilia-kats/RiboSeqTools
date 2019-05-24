@@ -74,7 +74,7 @@ make_enrichment_profilefun <- function(data, sample1, sample2) {
 }
 
 make_average_profilefun_impl <- function(featurenames) {
-    fbody <- sapply(featurenames, function(x)as.expression(substitute(ret[[x]] <- if(all(dim(xx) > 0)) colMeans(xx, na.rm=TRUE) else numeric(), env=list(x=x, xx=as.name(x)))))
+    fbody <- sapply(featurenames, function(x)as.expression(substitute(ret[[x]] <- if(!missing(xx) && all(dim(xx) > 0)) colMeans(xx, na.rm=TRUE) else numeric(), env=list(x=x, xx=as.name(x)))))
     fbody <- c(expression(ret <- list()), fbody, expression(ret))
     args <- alist()
     for (arg in featurenames) {
@@ -103,7 +103,12 @@ make_average_profilefun <- function(data) {
 #' @rdname make_average_profilefun
 #' @export
 make_average_profilefun.serp_data <- function(data) {
-    featurenames <- unique(sapply(get_data(data), function(exp)sapply(exp, names)))
+    featurenames <- purrr::map(get_data(data), function(exp) {
+        purrr::map(exp, names) %>%
+            purrr::reduce(union)
+    }) %>%
+        purrr::reduce(union)
+
     make_average_profilefun_impl(featurenames)
 }
 
