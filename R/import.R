@@ -7,24 +7,21 @@ import_csv <- function(path) {
         m <- m[,-acols]
     }
     m[is.na(m)] <- 0
-    Matrix.:Matrix(m, sparse=TRUE)
+    Matrix::Matrix(m, sparse=TRUE)
 }
 
 test_hdf5 <- function(path) {
     h5 <- file(path, "rb", raw=TRUE)
     magicnr <- readBin(h5, "raw", n=8)
     close(h5)
-    if (magicnr[1] == 0x89 &&
-        magicnr[2] == 0x48 &&
-        magicnr[3] == 0x44 &&
-        magicnr[4] == 0x46 &&
-        magicnr[5] == 0x0d &&
-        magicnr[6] == 0x0a &&
-        magicnr[7] == 0x1a &&
-        magicnr[8] == 0x0a)
-        TRUE
-    else
-        FALSE
+    magicnr[1] == 0x89 &&
+    magicnr[2] == 0x48 &&
+    magicnr[3] == 0x44 &&
+    magicnr[4] == 0x46 &&
+    magicnr[5] == 0x0d &&
+    magicnr[6] == 0x0a &&
+    magicnr[7] == 0x1a &&
+    magicnr[8] == 0x0a
 }
 
 require_h5 <- function() {
