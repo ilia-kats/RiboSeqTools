@@ -31,18 +31,20 @@ require_h5 <- function() {
 
 make_ref_from_hdf5 <- function(paths) {
     require_h5()
-    genes <- purrr::map(paths, function(path) {
+    genes <- purrr::map_dfr(paths, function(path) {
         f <- h5::h5file(path, "r")
         genes <- h5::list.datasets(f, full.names=FALSE)
-        genes <- purrr::map_int(rlang::set_names(genes), function(g) {
+        genes <- purrr::map_dfr(rlang::set_names(genes), function(g) {
             dset <- h5::openDataSet(f, g)
-            as.integer(h5::h5attr(dset, "cds_length"))
-        })
+            ret <- tibble::tibble(length=as.integer(h5::h5attr(dset, "cds_length")))
+            attrs <- h5::list.attributes(dset)
+            for (att in attrs[!(attrs == "cds_length")])
+                ret[[att]] <- h5::h5attr(dset, att)
+            ret
+        }, .id='gene')
         h5::h5close(f)
         genes
     }) %>%
-        purrr::flatten_int() %>%
-        tibble::enframe(name="gene", value="length") %>%
         dplyr::distinct()
 }
 
