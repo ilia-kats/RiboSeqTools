@@ -9,8 +9,8 @@ to the respective function. Currently, the following defaults are recognized:
 \describe{
      \item{bin}{Bin level, one of \code{byaa} for codon-level binning or \code{bynuc} for nucleotide-level
          binning (corresponds to no binning).}
-     \item{sample1}{Sample to use in the nominator of enrichment calculations.}
-     \item{sample2}{Sample to use in the denumerator of enrichment calculations.}
+     \item{sample1}{Sample to use in the numerator of enrichment calculations.}
+     \item{sample2}{Sample to use in the denominator of enrichment calculations.}
      \item{window_size}{Neighborhood size to use in enrichment CI calculations.}
      \item{plot_ylim}{Y axis limit for \link[=plot.serp_data]{enrichment plots}.}
      \item{plot_ybreaks}{Y axis breaks for \link[=plot.serp_data]{enrichment plots}.}
