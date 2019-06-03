@@ -86,7 +86,7 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
         dplyr::group_by(exp) %>%
         dplyr::filter(!(gene %in% exclude[exp[1]])) %>%
         dplyr::group_by(exp, rep, gene, !!rlang::sym(lencol)) %>%
-        dplyr::group_map(function(.x, .y) {
+        dplyr::group_modify(function(.x, .y) {
             pos <- which.max(.x$lo_CI[skip_5prime:(nrow(.x) - skip_3prime)]) + skip_5prime - 1
             gene <- as.character(.y$gene)
             exp <- .y$exp
@@ -392,7 +392,7 @@ get_binding_positions <- function(data, fdr=0.01) {
         rlang::abort("No p-values present. Run test_binding first.")
     dplyr::filter(pvals, p.adj < fdr) %>%
         dplyr::group_by(exp, rep, gene) %>%
-        dplyr::group_map(function(.x, .y) {
+        dplyr::group_modify(function(.x, .y) {
             if (nrow(.x) > 1) {
                 diffs <- rle(diff(.x$pos))
                 starts <- cumsum(c(1,diffs$lengths[1:(length(diffs$lengths) - 1)]))
@@ -408,7 +408,7 @@ get_binding_positions <- function(data, fdr=0.01) {
             s1 <- as.integer(get_data(data)[[.y$exp]][[.y$rep]][[bgmodel$sample1]][[bgmodel$bin]][.y$gene,])
             s2 <- as.integer(get_data(data)[[.y$exp]][[.y$rep]][[bgmodel$sample2]][[bgmodel$bin]][.y$gene,])
 
-            ret <- tibble::tibble(start=start, end=end, width=end - start + 1) %>%
+            tibble::tibble(start=start, end=end, width=end - start + 1) %>%
                 mutate(!!bgmodel$sample1 := purrr::map2_int(start, end, function(s,e)sum(s1[s:e])), !!bgmodel$sample2 := purrr::map2_int(start, end, function(s,e)sum(s2[s:e])))
         }) %>%
         dplyr::ungroup()

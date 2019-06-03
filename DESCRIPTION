@@ -11,7 +11,7 @@ Imports:
     purrr,
     tidyr,
     magrittr,
-    dplyr (>= 0.8),
+    dplyr (>= 0.8.1),
     tibble,
     binom,
     scales,
