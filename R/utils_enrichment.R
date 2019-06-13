@@ -205,14 +205,14 @@ plot.serp_data <- function(data, gene, sample1, sample2, exp, rep, bin, window_s
         dplyr::mutate(xmin= (winmid - 0.5) ,
                xmax=(winmid + 0.5),
                alpha=1/((1/!!rlang::sym(paste0('win_', sample1)) + 1/!!rlang::sym(paste0('win_', sample2))) * window_size),
-               next.lo=lead(lo_CI, default=0),
-               next.hi=lead(hi_CI, default=0),
+               next.lo=dplyr::lead(lo_CI, default=0),
+               next.hi=dplyr::lead(hi_CI, default=0),
                overlap=if_else(lo_CI - next.hi > 0, 1L, if_else(next.lo - hi_CI > 0, 2L, 0L)),
                overlap.xmin=xmax - (xmax - xmin) * 0.5,
-               overlap.xmax=lead(xmin) + (lead(xmax) - lead(xmin)) * 0.5,
-               overlap.ymin=recode(overlap, `0`=NA_real_, `1`=next.hi, `2`=hi_CI),
-               overlap.ymax=recode(overlap, `0`=NA_real_, `1`=lo_CI, `2`=next.lo),
-               mean_alpha=mean(c(alpha, lead(alpha)), na.rm=TRUE)) %>%
+               overlap.xmax=dplyr::lead(xmin) + (dplyr::lead(xmax) - dplyr::lead(xmin)) * 0.5,
+               overlap.ymin=dplyr::recode(overlap, `0`=NA_real_, `1`=next.hi, `2`=hi_CI),
+               overlap.ymax=dplyr::recode(overlap, `0`=NA_real_, `1`=lo_CI, `2`=next.lo),
+               mean_alpha=mean(c(alpha, dplyr::lead(alpha)), na.rm=TRUE)) %>%
         dplyr::ungroup() %>%
         ggplot2::ggplot(ggplot2::aes(fill=!!colaes)) +
             ggplot2::scale_y_continuous(trans="log2", limits=ylim, oob=scales::squish, expand=ggplot2::expand_scale(), breaks=ybreaks) +
