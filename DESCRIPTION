@@ -16,6 +16,7 @@ Imports:
     binom,
     scales,
     ggplot2 (>= 3.0),
+    scales,
     treemap,
     grid,
     rmutil,

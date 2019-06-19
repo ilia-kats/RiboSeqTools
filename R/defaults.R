@@ -2,18 +2,18 @@ get_default_param <- function(serp_data, param, error=TRUE) {
     pname <- as.character(rlang::ensym(param))
     if (missing(param) || !rlang::env_has(rlang::caller_env(), nms=pname, inherit=TRUE)) {
         dflts <- get_defaults(serp_data)
-        if (pname %in% names(dflts))
+        if (error && !(pname %in% names(dflts)))
+            rlang::abort(sprintf("no value for %s", pname))
+        else
             param <- dflts[[pname]]
     }
-    if (missing(param) && error)
-        stop(sprintf("invalid %s argument", pname))
     param
 }
 
 .defaults <- list(bin='byaa',
                   window_size=45,
-                  plot_ylim=NULL,
-                  plot_ybreaks=2^(-2:6))
+                  plot_ylim=c(2e-2, NA),
+                  plot_ybreaks=scales::log_breaks(base=2))
 
 #' Default parameters for a data set
 #'
