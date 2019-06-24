@@ -82,6 +82,7 @@ load_experiment <- function(..., .ref, .bin=c('bynuc', 'byaa'), .exclude=NULL) {
             if ('byaa' %in% .bin) {
                 mod <- ncol(m) %% 3
                 if (mod) {
+                    rlang::warn(sprintf("Length of at least one CDS in %s is not divisible by 3", path))
                     m <- m[,1:(ncol(m) - mod)]
                 }
                 ret$byaa <- m[,seq(1, ncol(m), by=3)] + m[,seq(2, ncol(m), by=3)] + m[,seq(3, ncol(m), by=3)]
