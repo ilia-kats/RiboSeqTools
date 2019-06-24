@@ -80,6 +80,10 @@ load_experiment <- function(..., .ref, .bin=c('bynuc', 'byaa'), .exclude=NULL) {
             if ('bynuc' %in% .bin)
                 ret$bynuc <- m
             if ('byaa' %in% .bin) {
+                mod <- ncol(m) %% 3
+                if (mod) {
+                    m <- m[,1:(ncol(m) - mod)]
+                }
                 ret$byaa <- m[,seq(1, ncol(m), by=3)] + m[,seq(2, ncol(m), by=3)] + m[,seq(3, ncol(m), by=3)]
             }
             if (!is.null(.exclude) && length(.exclude) > 0)
