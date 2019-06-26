@@ -10,9 +10,9 @@
 normalize.serp_data <- function(data) {
     stopifnot(!is_normalized(data))
     exclude <- excluded(data)
-    data <- set_data(data, purrr::pmap(list(exp=get_data(data), texp=get_total_counts(data)), function(exp, texp) {
-        purrr::pmap(list(rep=exp, trep=texp), function(rep, trep) {
-            purrr::pmap(list(sample=rep, tsample=trep), function(sample, tsample) {
+    data <- set_data(data, purrr::pmap(list(exp=get_data(data), texp=get_total_counts(data)[names(get_data(data))]), function(exp, texp) {
+        purrr::pmap(list(rep=exp, trep=texp[names(exp)]), function(rep, trep) {
+            purrr::pmap(list(sample=rep, tsample=trep[names(rep)]), function(sample, tsample) {
                 sapply(sample, function(bin) {
                     bin / tsample * 1e6
                 })
@@ -27,6 +27,28 @@ normalize.serp_data <- function(data) {
 #' @export
 normalize <- function(data) {
     UseMethod("normalize")
+}
+
+#' Calculate total read counts per gene
+#'
+#' @param data A \code{serp_data} object.
+#' @return A \link[tibble]{tibble} with columns \code{exp}, \code{rep}, \code{sample}, \code{counts}, and \code{RPM}
+#' @export
+get_genecounts <- function(data) {
+    check_serp_class(data)
+    if (is_normalized(data))
+        rlang::abort("normalized data given")
+
+    purrr::map2_dfr(get_data(data), get_total_counts(data)[names(get_data(data))], function(exp, texp) {
+        purrr::map2_dfr(exp, texp[names(exp)], function(rep, trep) {
+            purrr::map2_dfr(rep, trep[names(rep)], function(sample, tsample) {
+                touse <- names(sample)[1]
+                Matrix::rowSums(sample[[touse]]) %>%
+                    tibble::enframe(name="gene", value="counts") %>%
+                    dplyr::mutate(RPM=counts / tsample * 1e6)
+            }, .id="sample")
+        }, .id="rep")
+    }, .id="exp")
 }
 
 #' Threshold data using the elbow method
