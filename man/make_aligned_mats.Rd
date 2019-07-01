@@ -11,9 +11,9 @@ make_aligned_mats(data, pos, lengths, pwidth, filter = NULL,
 \arguments{
 \item{data}{Names list of data matrices.}
 
-\item{pos}{Vector of positions.}
+\item{pos}{Named vector of positions.}
 
-\item{lengths}{Named vector of gene/ORF lengths.}
+\item{lengths}{Named vector of gene/ORF lengths. Names must correspond to names of \code{pos}.}
 
 \item{pwidth}{Width of the final matrices.}
 

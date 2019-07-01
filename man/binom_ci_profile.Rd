@@ -23,7 +23,7 @@ binom_ci_profile(data, gene, sample1, sample2, exp, rep, bin, window_size,
 \item{bin}{Binning to use. If missing, will be automatically determined.}
 
 \item{window_size}{Neighborhood size in nucleotides. Will be automatically converted to codons if binning
-by codoons}
+by codons.}
 
 \item{conf.level}{Confidence level.}
 }

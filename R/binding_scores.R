@@ -1,3 +1,9 @@
+convolve_selection <- function(winsize, len) {
+    selectstart <- floor(0.5 * winsize + 1)
+    selectstop <- winsize - ceiling(0.5 * winsize)
+    c(selectstart, selectstop + len)
+}
+
 #' Calculate binding scores for each gene in a SeRP experiment
 #'
 #' A binding score for a gene is defined as the highest value of the position-wise confidence interval for the
@@ -282,9 +288,8 @@ windowed_readcounts <- function(mat, windowlen) {
     t(apply(mat, 1, function(x) {
         len <- sum(!is.na(x))
         total <- rep(NA_integer_, length(x))
-        selectstart <- floor(0.5 * windowlen + 1)
-        selectstop <- windowlen - ceiling(0.5 * windowlen)
-        total[1:len] <- as.integer(round(convolve(x[1:len], rep(1, windowlen), type='open')[selectstart:(len+selectstop)]))
+        cwindow <- convolve_selection(windowlen, len)
+        total[1:len] <- as.integer(round(convolve(x[1:len], rep(1, windowlen), type='open')[cwindow[1]:cwindow[2]]))
         total
     }))
 }

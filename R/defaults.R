@@ -12,8 +12,11 @@ get_default_param <- function(serp_data, param, error=TRUE) {
 
 .defaults <- list(bin='byaa',
                   window_size=45,
-                  plot_ylim=c(2e-2, NA),
-                  plot_ybreaks=scales::log_breaks(base=2))
+                  plot_ylim_enrichment=c(2^(-3), NA),
+                  plot_ybreaks_enrichment=scales::log_breaks(base=2),
+                  plot_ylim_rpm=c(1e-3, NA),
+                  plot_ybreaks_rpm=scales::log_breaks(base=10),
+                  plot_fill_scale=ggplot2::scale_fill_brewer(palette="Set1"))
 
 #' Default parameters for a data set
 #'
@@ -25,8 +28,10 @@ get_default_param <- function(serp_data, param, error=TRUE) {
 #'      \item{sample1}{Sample to use in the numerator of enrichment calculations.}
 #'      \item{sample2}{Sample to use in the denominator of enrichment calculations.}
 #'      \item{window_size}{Neighborhood size to use in enrichment CI calculations.}
-#'      \item{plot_ylim}{Y axis limit for \link[=plot.serp_data]{enrichment plots}.}
-#'      \item{plot_ybreaks}{Y axis breaks for \link[=plot.serp_data]{enrichment plots}.}
+#'      \item{plot_ylim_enrichment}{Y axis limit for \link[=plot.serp_data]{enrichment plots}.}
+#'      \item{plot_ybreaks_enrichment}{Y axis breaks for \link[=plot.serp_data]{enrichment plots}.}
+#'      \item{plot_ylim_rpm}{Y axis limit for \link[=plot.serp_data]{RPM plots}.}
+#'      \item{plot_ybreaks_rpm}{Y axis breaks for \link[=plot.serp_data]{RPM plots}.}
 #'      \item{plot_fill_scale}{A \link[ggplot2:scale_fill_discrete]{ggplot2 fill scale} to use for
 #'          \link[=plot.serp_data]{enrichment plots}. If this is a \link[ggplot2:scale_fill_manual]{manual scale},
 #'          value names must correspond to experiment names.}

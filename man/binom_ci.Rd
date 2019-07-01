@@ -20,7 +20,7 @@ binom_ci(sample1, sample2, sample1_total, sample2_total,
 }
 \value{
 A \link[tibble]{tibble} containing the observed proportions and the lower
-and upper bounds of the confidence interval
+and upper bounds of the confidence interval.
 }
 \description{
 Given total read counts in two samples, calculates library size-normalized confidence intervals

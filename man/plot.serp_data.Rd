@@ -2,16 +2,21 @@
 % Please edit documentation in R/utils_enrichment.R
 \name{plot.serp_data}
 \alias{plot.serp_data}
-\title{Plot an enrichment profile}
+\title{Plot a profile along a gene}
 \usage{
-\method{plot}{serp_data}(data, gene, sample1, sample2, exp, rep, bin,
-  window_size, conf.level = 0.95, colaes = exp,
-  highlightregion = list(), highlightargs = list())
+\method{plot}{serp_data}(data, gene, type = c("enrichment", "rpm"),
+  samples, sample1, sample2, exp, rep, bin, window_size,
+  conf.level = 0.95, color = exp, highlightregion = list(),
+  highlightargs = list())
 }
 \arguments{
 \item{data}{A \code{serp_data} object. Must contain raw (unnormalized) read counts.}
 
 \item{gene}{Name of the gene/ORF to plot.}
+
+\item{type}{Plot type. One of \code{enrichment}, \code{rpm}.}
+
+\item{samples}{Samples to plot. If missing, all samples will be plotted.}
 
 \item{sample1}{Name of the first sample (the numerator). If missing, the default sample1 of the data set
 will be used.}
@@ -31,9 +36,9 @@ window size of the data set will be used.}
 
 \item{conf.level}{Confidence level.}
 
-\item{colaes}{Variable to use for the color scale.}
-
 \item{highlightargs}{Named list of additional parameters to pass to \code{\link[ggplot2]{annotate}}}
+
+\item{colaes}{Variable to use for the color scale.}
 
 \item{higlightregion}{Regions in the plot to be highlighted. Can be either a list containing two-element
 numeric vectors or a two-column matrix. Rectangles spanning the entire height of the plot will be
@@ -43,8 +48,17 @@ drawn between the given x positions.}
 A \code{\link[ggplot2]{ggplot}} object.
 }
 \description{
-For each position, a binomial confidence interval calculated using \code{\link{binom_ci_profile}} is
-plotted. Transparency reflects the total number of reads contributing to the confidence interval.
+For each position, a confidence interval is plotted. Transparency reflects the total number of reads
+contributing to the confidence interval.
+}
+\details{
+If \code{type} is \code{enrichment}, a binomial confidence interval for enrichment of \code{sample1}
+compared to \code{sample2} is calculated using \code{\link{binom_ci_profile}}. The \code{samples}
+argument is ignored.
+
+If \code{type} is \code{samples}, a Poisson confidence interval for RPM in samples \code{samples}
+is calculated using \code{\link{pois_ci_profile}}. The \code{sample1} and \code{sample2} arguments
+are ignored.
 }
 \seealso{
 \code{\link{defaults}}
