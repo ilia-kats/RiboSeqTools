@@ -279,8 +279,9 @@ annotate_profile <- function(highlightregion, ...) {
 #' argument is ignored.
 #'
 #' If \code{type} is \code{samples}, a Poisson confidence interval for RPM in samples \code{samples}
-#' is calculated using \code{\link{pois_ci_profile}}. The \code{sample1} and \code{sample2} arguments
-#' are ignored.
+#' is calculated using \code{\link{pois_ci_profile}}. The upper and lower bounds are then divided by
+#' \code{window_size} to indicate confidence in the local smoothed read density. The \code{sample1}
+#' and \code{sample2} arguments are ignored.
 #'
 #' @param data A \code{serp_data} object. Must contain raw (unnormalized) read counts.
 #' @param gene Name of the gene/ORF to plot.
@@ -328,7 +329,7 @@ plot.serp_data <- function(data, gene, type=c("enrichment", "rpm"), samples, sam
         ytrans <- "log10"
 
         df <- pois_ci_profile(data, gene, samples, exp, rep, bin, window_size, conf.level) %>%
-            dplyr::mutate(alpha=counts)
+            dplyr::mutate(alpha=counts, lo_CI=lo_CI / window_size, hi_CI=hi_CI / window_size)
         dfgroups <- list(rlang::sym("exp"), rlang::sym("rep"), rlang::sym("sample"))
     }
 

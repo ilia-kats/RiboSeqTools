@@ -57,8 +57,9 @@ compared to \code{sample2} is calculated using \code{\link{binom_ci_profile}}. T
 argument is ignored.
 
 If \code{type} is \code{samples}, a Poisson confidence interval for RPM in samples \code{samples}
-is calculated using \code{\link{pois_ci_profile}}. The \code{sample1} and \code{sample2} arguments
-are ignored.
+is calculated using \code{\link{pois_ci_profile}}. The upper and lower bounds are then divided by
+\code{window_size} to indicate confidence in the local smoothed read density. The \code{sample1}
+and \code{sample2} arguments are ignored.
 }
 \seealso{
 \code{\link{defaults}}
