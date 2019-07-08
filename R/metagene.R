@@ -124,31 +124,34 @@ make_average_profilefun.serp_features <- function(data) {
 #' Centers each gene at a given position within the gene.
 #'
 #' @param data Names list of data matrices.
-#' @param pos Vector of positions.
-#' @param lengths Named vector of gene/ORF lengths.
+#' @param align Named vector of positions.
+#' @param lengths Named vector of gene/ORF lengths. Names must correspond to names of \code{align}.
 #' @param pwidth Width of the final matrices.
 #' @param filter Genes to include. Defaults to all genes.
 #' @param binwidth Bin width, if binning is desired.
 #' @param binmethod Binning method. \code{sum}: Read counts within each bin are summed up; \code{mean}:
 #'      Read counts are averaged.
-#' @return Named list of matrices. Matrices are of width \eqn{2\cdot \textrm{pwidth} + 1}, with \code{pos} in
+#' @return Named list of matrices. Matrices are of width \eqn{2\cdot \textrm{pwidth} + 1}, with \code{align} in
 #'      column \eqn{\textrm{pwidth} + 1}.
 #' @export
-make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), bpparam=BiocParallel::bpparam()) {
+make_aligned_mats <- function(data, align, lengths, pwidth, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), bpparam=BiocParallel::bpparam()) {
     binmethod <- match.arg(binmethod)
     binmethod <- switch(binmethod, sum=sum, mean=mean)
+    if (is.null(names(align))) {
+        rlang::abort("align must be a named vector")
+    }
     BiocParallel::bplapply(data, function(d) {
         .filter <- filter
-        stopifnot(is.null(.filter) || length(.filter) == length(pos))
+        stopifnot(is.null(.filter) || length(.filter) == length(align))
         if (is.null(.filter))
             .filter <- rownames(d)
+        .filter <- intersect(.filter, names(align))
         .lengths <- lengths[.filter];
+        align <- align[.filter]
         t(mapply(function(g, p, l) {
             tlen <- 2 * pwidth + 1
             efflen <- ceiling(tlen / binwidth)
             out <- rep(NA_real_, efflen)
-            nstart <- max(1, pwidth - p + 2)
-            nstop <- 2 * pwidth + 1 - (p + pwidth - min(l, p + pwidth))
             if (binwidth > 1) {
                 bins <- rle(1:tlen / tlen * efflen)
                 starts <- c(1, cumsum(bins$lengths)[1:(length(bins$lengths))-1]+1)
@@ -163,10 +166,12 @@ make_aligned_mats <- function(data, pos, lengths, pwidth, filter=NULL, binwidth=
                 out[firstbin:lastbin] <- mapply(function(s, e)binmethod(d[g, s:e]), start + starts[firstbin:lastbin] - 1, start + ends[firstbin:lastbin] - 1)
             }
             else {
+                nstart <- max(1, pwidth - p + 2)
+                nstop <- 2 * pwidth + 1 - (p + pwidth - min(l, p + pwidth))
                 out[nstart:nstop] <- d[g, max(1, p - pwidth):min(p + pwidth, l)]
             }
             out
-        }, .filter, pos, .lengths))
+        }, .filter, align, .lengths))
     }, BPPARAM=bpparam)
 }
 
@@ -181,6 +186,8 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
 
     if (!is.null(normalizefun)) {
         mats <- rlang::exec(normalizefun, !!!mats, !!!extrapars, !!!pars)
+        if (!is.list(mats) || is.null(names(mats)))
+            rlang::abort("normalizefun must return a named list of matrices")
     }
 
     if (length(align) == 1 && align %in% c('start', 'stop')) {
@@ -284,7 +291,7 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
 #' genes contained in all matrices is retained). For \code{serp_data} objects, this filtering is performed
 #' separately for each experiment and replicate. Data matrices are the filtered to contain only genes in
 #' \code{filter}, if \code{filter is given}. Matrices are then passed to \code{normalizefun}
-#' as named arguments, with names corresponding to sample type. If \code{align}is one of \code{start}
+#' as named arguments, with names corresponding to sample type. If \code{align} is one of \code{start}
 #' or \code{stop}, normalized data matrices are first aligned, then binned and trimmed to \code{len}
 #' columns. If \code{align} is a vector of positions, data matrices are centered using
 #' \code{\link{make_aligned_mats}} without binning for performance reasons, binning
@@ -308,9 +315,9 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
 #' @param normalizefun Function that normalizes the data pefore binning and profile calculation. Must accept
 #'      the same arguments as \code{profilefun}. Must return a named list of matrices.
 #' @param align Alignment of the metagene profile, one of \code{start} (5' end) or \code{stop} (3' end).
-#'      Alternatively, a numeric vector of alignment positions for each gene in code{filter} can be given. In
-#'      this case, genes will be aligned to the given positions and the profile will be centered at 0, spanning
-#'      \code{len} positions in either direction.
+#'      Alternatively, a named numeric vector of alignment positions for each gene in \code{filter} can be given. In
+#'      this case, names must correspond to gene names and genes will be aligned to the given positions
+#'      and the profile will be centered at 0, spanning \code{len} positions in either direction.
 #' @param nboot Number of bootstrap samples.
 #' @param bpparam A \code{\link[BiocParallel]{BiocParallelParam-class}} object.
 #' @return A \link[tibble]{tibble} with the following columns: \describe{

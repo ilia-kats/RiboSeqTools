@@ -42,9 +42,9 @@ will be used}
 the same arguments as \code{profilefun}. Must return a named list of matrices.}
 
 \item{align}{Alignment of the metagene profile, one of \code{start} (5' end) or \code{stop} (3' end).
-Alternatively, a numeric vector of alignment positions for each gene in code{filter} can be given. In
-this case, genes will be aligned to the given positions and the profile will be centered at 0, spanning
-\code{len} positions in either direction.}
+Alternatively, a named numeric vector of alignment positions for each gene in \code{filter} can be given. In
+this case, names must correspond to gene names and genes will be aligned to the given positions
+and the profile will be centered at 0, spanning \code{len} positions in either direction.}
 
 \item{nboot}{Number of bootstrap samples.}
 
@@ -71,7 +71,7 @@ Data matrices are first filtered to contain the same set of genes (i.e. only the
 genes contained in all matrices is retained). For \code{serp_data} objects, this filtering is performed
 separately for each experiment and replicate. Data matrices are the filtered to contain only genes in
 \code{filter}, if \code{filter is given}. Matrices are then passed to \code{normalizefun}
-as named arguments, with names corresponding to sample type. If \code{align}is one of \code{start}
+as named arguments, with names corresponding to sample type. If \code{align} is one of \code{start}
 or \code{stop}, normalized data matrices are first aligned, then binned and trimmed to \code{len}
 columns. If \code{align} is a vector of positions, data matrices are centered using
 \code{\link{make_aligned_mats}} without binning for performance reasons, binning
