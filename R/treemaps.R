@@ -18,6 +18,13 @@
 plot_treemap <- function(data, exp, rep, sample, geneclass, title='', palette="Set2") {
     check_serp_class(data)
 
+    if (!is.character(exp))
+        exp <- as.character(exp)
+    if (!is.character(rep))
+        rep <- as.character(rep)
+    if (!is.character(sample))
+        sample <- as.character(sample)
+
     if (ncol(geneclass) == 2 && !('class' %in% colnames(geneclass)) && 'gene' %in% colnames(geneclass))
         geneclass <- dplyr::rename(geneclass, class=-dplyr::matches('gene'))
     classes <- levels(geneclass$class)

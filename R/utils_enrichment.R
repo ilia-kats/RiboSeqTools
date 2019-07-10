@@ -84,10 +84,16 @@ binom_ci_profile <- function(data, gene, sample1, sample2, exp, rep, bin, window
     check_serp_class(data)
     stopifnot(!is_normalized(data))
 
-    if (missing(exp))
+    if (missing(exp)) {
         exp <- TRUE
-    if (missing(rep))
+    } else if (!is.character(exp)) {
+        exp <- as.character(exp)
+    }
+    if (missing(rep)) {
         rep <- TRUE
+    } else if (!is.character(rep)) {
+        rep <- as.character(rep)
+    }
     binmissing <- missing(bin)
 
     idx <- which(get_reference(data)$gene == gene)
