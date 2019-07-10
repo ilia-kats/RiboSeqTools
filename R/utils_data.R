@@ -143,7 +143,7 @@ print.serp_data <- function(data) {
     if (length(excluded(data)) == 0) {
         cat(' None\n')
     } else {
-        cat('\n  ', paste(purrr::imap(excluded(data), function(exc, exp)sprintf("%s: %s", exp, paste(exc, collapse=', '))), collapse='\n  '), sep='')
+        cat('\n  ', paste(purrr::imap(excluded(data), function(exc, exp)sprintf("%s: %s", exp, paste(exc, collapse=', '))), collapse='\n  '), '\n', sep='')
     }
     print_list_name("", " .", "", get_data(data))
     cat('\n')
