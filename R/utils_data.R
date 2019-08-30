@@ -363,7 +363,10 @@ calc_total_counts <- function(data, what=NULL) {
 `[.serp_data` <- function(data, i) {
     data <- set_data(data, get_data(data)[i])
     data <- set_total_counts(data, get_total_counts(data)[i])
-    data <- set_excluded(data, excluded(data)[i])
+
+    exc <- excluded(data)
+    nexc <- intersect(i, names(exc))
+    data <- set_excluded(data, exc[nexc])
 
     bgmodel <- get_background_model(data)
     if (!is.null(bgmodel)) {
@@ -409,7 +412,7 @@ c.serp_data <- function(...) {
                     if (j %in% names(outdat[[i]])) {
                         nrep <- list(cdata[[i]][[j]])
                         nreptotal <- list(ctotal[[i]][[j]])
-                        newrepname <- max(names(outdat[[i]])) + 1
+                        newrepname <- max(as.integer(names(outdat[[i]]))) + 1
                         names(nrep) <- names(nreptotal) <- newrepname
                         outdat[[i]] <- c(outdat[[i]], nrep)
                         outtotal[[i]] <- c(outtotal[[i]], nreptotal)
@@ -466,6 +469,28 @@ c.serp_data <- function(...) {
         set_excluded(outexclude)
 }
 
+combine_limits <- function(x, y) {
+    if (isTRUE(x == y))
+        x
+    else if (!is.null(x) || !is.null(y))
+        range(x, y)
+    else
+        NULL
+}
+
+combine_breaks <- function(x, y) {
+    if (is.numeric(x) && is.numeric(y))
+        union(x,y)
+    else if (is.function(x) && !is.function(y))
+        x
+    else if (is.function(y) && !is.function(x))
+        y
+    else if (isTRUE(all.equal(x, y)))
+        x
+    else
+        NULL
+}
+
 combine_defaults <- function(x, y) {
     out <- list()
     if (isTRUE(x$bin != y$bin))
@@ -481,12 +506,10 @@ combine_defaults <- function(x, y) {
     if (isTRUE(x$window_size == y$window_size))
         out$window_size <- x$window_size
 
-    if (isTRUE(x$plot_ylim == y$plot_ylim))
-        out$plot_ylim <- x$plot_ylim
-    else if (!is.null(x$plot_ylim) || !is.null(y$plot_ylim))
-        out$plot_ylim <- range(x$plot_ylim, y$plot_ylim)
-
-    out$plot_ybreaks <- dplyr::union(x$plot_ybreaks, y$plot_ybreaks)
+    out$plot_ylim_rpm <- combine_limits(x$plot_ylim_rpm, y$plot_ylim_rpm)
+    out$plot_ybreaks_rpm <- combine_breaks(x$plot_ybreaks_rpm, y$plot_ybreaks_rpm)
+    out$plot_ylim_enrichment <- combine_limits(x$plot_ylim_enrichment, y$plot_ylim_enrichment)
+    out$plot_ybreaks_enrichment <- combine_breaks(x$plot_ybreaks_enrichment, y$plot_ybreaks_enrichment)
 
     out
 }

@@ -335,7 +335,7 @@ plot.serp_data <- function(data, gene, type=c("enrichment", "rpm"), samples, sam
         ytrans <- "log10"
 
         df <- pois_ci_profile(data, gene, samples, exp, rep, bin, window_size, conf.level) %>%
-            dplyr::mutate(alpha=counts, lo_CI=lo_CI / window_size, hi_CI=hi_CI / window_size)
+            dplyr::mutate(alpha=counts / window_size, lo_CI=lo_CI / window_size, hi_CI=hi_CI / window_size)
         dfgroups <- list(rlang::sym("exp"), rlang::sym("rep"), rlang::sym("sample"))
     }
 
