@@ -138,6 +138,7 @@ NULL
 print.serp_data <- function(data) {
     cat(sprintf('A ribosome profiling data set with %d experiments\n', length(get_data(data))))
     cat(sprintf('Counts are normalized to library size: %s\n', ifelse(is_normalized(data), 'Yes', 'No')))
+    cat(sprintf('Counts are downsampled: %s\n', ifelse(is_downsampled(data), 'Yes', 'No')))
 
     cat('Excluded genes:')
     if (length(excluded(data)) == 0) {
