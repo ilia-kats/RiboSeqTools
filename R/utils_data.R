@@ -455,7 +455,8 @@ c.serp_data <- function(...) {
         }
     }
 
-    outref <- purrr::reduce(purrr::map(dat, get_reference), dplyr::union)
+    refcols <- purrr::reduce(purrr::map(dat, purrr::compose(get_reference, colnames, .dir="forward")), dplyr::intersect)
+    outref <- purrr::reduce(purrr::map(dat, purrr::compose(get_reference, purrr::partial(dplyr::select, ...=, !!!refcols), .dir="forward")), dplyr::union)
     outdefaults <- purrr::reduce(purrr::map(dat, get_defaults), combine_defaults)
 
     structure(list(defaults=list()), class='serp_data') %>%
