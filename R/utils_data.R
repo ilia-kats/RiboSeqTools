@@ -472,7 +472,7 @@ c.serp_data <- function(...) {
 }
 
 combine_limits <- function(x, y) {
-    if (isTRUE(x == y))
+    if (isTRUE(x == y) || identical(x,y))
         x
     else if (!is.null(x) || !is.null(y))
         range(x, y)
