@@ -38,8 +38,13 @@ make_ref_from_hdf5 <- function(paths) {
             dset <- h5::openDataSet(f, g)
             ret <- tibble::tibble(length=as.integer(h5::h5attr(dset, "cds_length")))
             attrs <- h5::list.attributes(dset)
-            for (att in attrs[!(attrs == "cds_length")])
+            for (att in attrs[!(attrs %in% c("gene", "cds_length"))])
                 ret[[att]] <- h5::h5attr(dset, att)
+                if ("gene" %in% attrs) {
+                    ga <- h5::h5attr(dset, "gene")
+                    if (ga != g)
+                        ret$gene_alt <- ga
+                }
             ret
         }, .id='gene')
         h5::h5close(f)
