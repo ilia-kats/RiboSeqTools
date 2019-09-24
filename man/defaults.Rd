@@ -7,6 +7,7 @@
 Named list of default values used in various functions. Usually, the default can be overriden by an argument
 to the respective function. Currently, the following defaults are recognized:
 \describe{
+     \item{genename_column}{Which column of the reference table to use for gene names.}
      \item{bin}{Bin level, one of \code{byaa} for codon-level binning or \code{bynuc} for nucleotide-level
          binning (corresponds to no binning).}
      \item{sample1}{Sample to use in the numerator of enrichment calculations.}

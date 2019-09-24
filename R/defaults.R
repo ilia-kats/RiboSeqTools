@@ -10,7 +10,8 @@ get_default_param <- function(serp_data, param, error=TRUE) {
     param
 }
 
-.defaults <- list(bin='byaa',
+.defaults <- list(genename_column="gene",
+                  bin='byaa',
                   window_size=45,
                   plot_ylim_enrichment=c(2^(-3), NA),
                   plot_ybreaks_enrichment=scales::log_breaks(base=2),
@@ -23,6 +24,7 @@ get_default_param <- function(serp_data, param, error=TRUE) {
 #' Named list of default values used in various functions. Usually, the default can be overriden by an argument
 #' to the respective function. Currently, the following defaults are recognized:
 #' \describe{
+#'      \item{genename_column}{Which column of the reference table to use for gene names.}
 #'      \item{bin}{Bin level, one of \code{byaa} for codon-level binning or \code{bynuc} for nucleotide-level
 #'          binning (corresponds to no binning).}
 #'      \item{sample1}{Sample to use in the numerator of enrichment calculations.}

@@ -125,7 +125,10 @@ load_experiment <- function(..., .ref, .bin=c('bynuc', 'byaa'), .exclude=NULL) {
 #'          \item{length}{ORF length in nucleotides.}
 #'      }
 #'      If all input files are HDF5 files, this argument can be missing, in which case a refence is
-#'      created from the union of all inputs files.
+#'      created from the union of all input files. For this to work, each HDF5 data set must have
+#'      an attribute \code{cds_length}. Other HDF5 attributes will be included as additional columns. If
+#'      HDF5 datasets have an attribute \code{gene}, the corresponding column will be named \code{gene_alt}
+#'      to avoid conflicts with the \code{gene} column created from dataset names.
 #' @param normalize Normalize the read counts to library size? Output will then be in RPM.
 #' @param bin Bin the data. \code{bynuc}: No binning (i.e. counts per nucleotide). \code{byaa}: Bin by residue.
 #' @param exclude Genes to exclude in all future analyses. This genes will also be excluded from total read count

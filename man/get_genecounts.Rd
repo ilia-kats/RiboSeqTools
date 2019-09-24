@@ -10,7 +10,9 @@ get_genecounts(data)
 \item{data}{A \code{serp_data} object.}
 }
 \value{
-A \link[tibble]{tibble} with columns \code{exp}, \code{rep}, \code{sample}, \code{counts}, and \code{RPM}
+A \link[tibble]{tibble} with columns \code{exp}, \code{rep}, \code{sample}, \code{counts},
+     and \code{RPM}. If \code{\link[=defaults]{genename_column}} is not \code{"gene"}, the tibble will
+     in additon contain \code{\link[=defaults]{genename_column}}.
 }
 \description{
 Calculate total read counts per gene

@@ -86,6 +86,7 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
                                      bin=bin,
                                      window_size=window_size,
                                      conf.level=conf.level,
+                                     ignore_genecol=TRUE,
                                      BPPARAM=bpparam) %>%
         dplyr::bind_rows(.id='gene') %>%
         {suppressWarnings(dplyr::inner_join(., get_reference(data), by='gene'))} %>%
@@ -127,7 +128,8 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
         dplyr::group_by(exp, rep) %>%
         dplyr::mutate(rank=dplyr::dense_rank(desc(lo_CI))) %>%
         dplyr::ungroup() %>%
-        dplyr::mutate(gene=as.factor(gene))
+        map_df_genenames(data) %>%
+        dplyr::mutate(scores, exp=as.factor(exp), rep=as.factor(rep))
 }
 
 #' @importFrom rmutil dbetabinom
@@ -362,9 +364,10 @@ test_binding <- function(data, window_size, bpparam=BiocParallel::bpparam()) {
         }, .id='rep')
     }, rawdata, bgdata, names(rawdata), SIMPLIFY=FALSE, BPPARAM=bpparam) %>%
         dplyr::bind_rows(.id='exp') %>%
+        mutate(exp=as.factor(exp), rep=as.factor(rep)) %>%
         group_by(exp, rep) %>%
         mutate(p.adj=p.adjust(pval, method='BY')) %>%
-        ungroup()
+        ungroup() %>%
     set_binding_pvalues(data, pvals)
 }
 
@@ -416,5 +419,6 @@ get_binding_positions <- function(data, fdr=0.01) {
             tibble::tibble(start=start, end=end, width=end - start + 1) %>%
                 mutate(!!bgmodel$sample1 := purrr::map2_int(start, end, function(s,e)sum(s1[s:e])), !!bgmodel$sample2 := purrr::map2_int(start, end, function(s,e)sum(s2[s:e])))
         }) %>%
+        map_df_genenames(data) %>%
         dplyr::ungroup()
 }

@@ -142,7 +142,6 @@ make_aligned_mats <- function(data, align, lengths, pwidth, filter=NULL, binwidt
     }
     BiocParallel::bplapply(data, function(d) {
         .filter <- filter
-        stopifnot(is.null(.filter) || length(.filter) == length(align))
         if (is.null(.filter))
             .filter <- rownames(d)
         .filter <- intersect(.filter, names(align))
@@ -246,7 +245,7 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
                 }, rownames(m), refs[rownames(m)]))
             }
         }, mats, len, SIMPLIFY=FALSE)
-    } else if (all(is.numeric(align))) {
+    } else if (is.numeric(align)) {
         mats <- make_aligned_mats(mats, align, refs, len, binwidth=1, binmethod='sum')
     } else {
         rlang::abort("unrecognized align parameter")
@@ -341,18 +340,24 @@ metagene_profiles <- function(data, ...) {
 metagene_profiles.serp_data <- function(data, profilefun, len, bin, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, bpparam=BiocParallel::bpparam()) {
     bin <- get_default_param(data, bin)
     binmethod <- match.arg(binmethod)
-    refs <- setNames(get_reference(data)$length, get_reference(data)$gene)
+    ref <- get_reference(data)
+    refs <- setNames(ref$length, ref$gene)
     exclude <- excluded(data)
     if (bin == 'byaa')
         refs <- refs / 3
+    if (is.numeric(align))
+        names(align) <- map_genenames(data, names(align))
     d <- purrr::imap_dfr(get_data(data), function(d, exp) {
         purrr::imap_dfr(d, function(d, rep) {
             .filter <- filter
             if (is.list(.filter)) {
                 .filter <- .filter[[exp]]
                 if (is.list(.filter))
-                .filter <- .filter[[rep]]
+                    .filter <- .filter[[rep]]
+
             }
+            .filter <- map_genenames(data, .filter)
+
             metagene_profile(d,
                              profilefun,
                              len,

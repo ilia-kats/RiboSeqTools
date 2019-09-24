@@ -63,6 +63,9 @@ pois_ci <- function(sample, conf.level=0.95) {
 #' @param window_size Neighborhood size in nucleotides. Will be automatically converted to codons if binning
 #'      by codons.
 #' @param conf.level Confidence level.
+#' @param ignore_genecol If \code{TRUE}, assumes that the given \code{gene} is the gene identifier contained
+#'      in the \code{gene} column of the reference table. If \code{FALSE}, assumes that the given \code{gene}
+#'      corresponds to the \code{genename_column} setting in the \link{defaults}.
 #' @return A \link[tibble]{tibble} with the following columns: \describe{
 #'      \item{exp}{Experiment name.}
 #'      \item{rep}{Replicate name.}
@@ -80,7 +83,7 @@ pois_ci <- function(sample, conf.level=0.95) {
 #'      \item{hi_CI}{Upper confidence bound.}
 #'}
 #' @export
-binom_ci_profile <- function(data, gene, sample1, sample2, exp, rep, bin, window_size, conf.level=0.95) {
+binom_ci_profile <- function(data, gene, sample1, sample2, exp, rep, bin, window_size, conf.level=0.95, ignore_genecol=FALSE) {
     check_serp_class(data)
     stopifnot(!is_normalized(data))
 
@@ -96,8 +99,8 @@ binom_ci_profile <- function(data, gene, sample1, sample2, exp, rep, bin, window
     }
     binmissing <- missing(bin)
 
-    idx <- which(get_reference(data)$gene == gene)
-    if (!length(idx)) rlang::abort("unknown gene")
+    idx <- get_gene_ref_idx(data, gene, ignore_genecol)
+    gene <- get_reference(data)$gene[idx]
 
     genelen <- get_reference(data)$length[idx]
     cdslen <- get_reference(data)$cds_length[idx]
@@ -155,6 +158,9 @@ binom_ci_profile <- function(data, gene, sample1, sample2, exp, rep, bin, window
 #' @param window_size Neighborhood size in nucleotides. Will be automatically converted to codons if binning
 #'      by codons.
 #' @param conf.level Confidence level.
+#' @param ignore_genecol If \code{TRUE}, assumes that the given \code{gene} is the gene identifier contained
+#'      in the \code{gene} column of the reference table. If \code{FALSE}, assumes that the given \code{gene}
+#'      corresponds to the \code{genename_column} setting in the \link{defaults}.
 #' @return A \link[tibble]{tibble} with the following columns: \describe{
 #'      \item{exp}{Experiment name.}
 #'      \item{rep}{Replicate name.}
@@ -172,7 +178,7 @@ binom_ci_profile <- function(data, gene, sample1, sample2, exp, rep, bin, window
 #'      \item{hi_CI}{Upper confidence bound for RPM.}
 #'}
 #' @export
-pois_ci_profile <- function(data, gene, samples, exp, rep, bin, window_size, conf.level=0.95) {
+pois_ci_profile <- function(data, gene, samples, exp, rep, bin, window_size, conf.level=0.95, ignore_genecol=FALSE) {
     check_serp_class(data)
     if (is_normalized(data))
         rlang::abort("Need count data")
@@ -183,8 +189,8 @@ pois_ci_profile <- function(data, gene, samples, exp, rep, bin, window_size, con
     binmissing <- missing(bin)
     samplesmissing <- missing(samples)
 
-    idx <- which(get_reference(data)$gene == gene)
-    if (!length(idx)) rlang::abort("unknown gene")
+    idx <- get_gene_ref_idx(data, gene, ignore_genecol)
+    gene <- get_reference(data)$gene[idx]
 
     genelen <- get_reference(data)$length[idx]
     cdslen <- get_reference(data)$cds_length[idx]

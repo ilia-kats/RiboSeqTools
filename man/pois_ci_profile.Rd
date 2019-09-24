@@ -5,7 +5,7 @@
 \title{Calculate position-wise confidence intervals}
 \usage{
 pois_ci_profile(data, gene, samples, exp, rep, bin, window_size,
-  conf.level = 0.95)
+  conf.level = 0.95, ignore_genecol = FALSE)
 }
 \arguments{
 \item{data}{A \code{serp_data} object.}
@@ -24,6 +24,10 @@ pois_ci_profile(data, gene, samples, exp, rep, bin, window_size,
 by codons.}
 
 \item{conf.level}{Confidence level.}
+
+\item{ignore_genecol}{If \code{TRUE}, assumes that the given \code{gene} is the gene identifier contained
+in the \code{gene} column of the reference table. If \code{FALSE}, assumes that the given \code{gene}
+corresponds to the \code{genename_column} setting in the \link{defaults}.}
 }
 \value{
 A \link[tibble]{tibble} with the following columns: \describe{

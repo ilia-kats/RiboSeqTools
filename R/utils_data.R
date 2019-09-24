@@ -32,23 +32,29 @@ normalize <- function(data) {
 #' Calculate total read counts per gene
 #'
 #' @param data A \code{serp_data} object.
-#' @return A \link[tibble]{tibble} with columns \code{exp}, \code{rep}, \code{sample}, \code{counts}, and \code{RPM}
+#' @return A \link[tibble]{tibble} with columns \code{exp}, \code{rep}, \code{sample}, \code{counts},
+#'      and \code{RPM}. If \code{\link[=defaults]{genename_column}} is not \code{"gene"}, the tibble will
+#'      in additon contain \code{\link[=defaults]{genename_column}}.
 #' @export
 get_genecounts <- function(data) {
     check_serp_class(data)
     if (is_normalized(data))
         rlang::abort("normalized data given")
 
-    purrr::map2_dfr(get_data(data), get_total_counts(data)[names(get_data(data))], function(exp, texp) {
+    exclude <- excluded(data)
+    purrr::pmap_dfr(list(exp=get_data(data), texp=get_total_counts(data)[names(get_data(data))], nexp=names(get_data(data))), function(exp, texp, nexp) {
         purrr::map2_dfr(exp, texp[names(exp)], function(rep, trep) {
             purrr::map2_dfr(rep, trep[names(rep)], function(sample, tsample) {
                 touse <- names(sample)[1]
                 Matrix::rowSums(sample[[touse]]) %>%
                     tibble::enframe(name="gene", value="counts") %>%
+                    dplyr::filter(!(gene %in% exclude[nexp])) %>%
                     dplyr::mutate(RPM=counts / tsample * 1e6)
             }, .id="sample")
         }, .id="rep")
-    }, .id="exp")
+    }, .id="exp") %>%
+        map_df_genenames(data) %>%
+        dplyr::mutate(exp=as.factor(exp), rep=as.factor(rep), sample=as.factor(sample))
 }
 
 #' Threshold data using the elbow method
@@ -285,7 +291,7 @@ get_background_model <- function(data) {
 #' @export
 get_binding_pvalues <- function(data) {
     check_serp_class(data)
-    data$binding_pvals
+    map_df_genenames(data$binding_pvals, data)
 }
 
 set_reference <- function(data, ref) {
@@ -329,7 +335,7 @@ set_downsampled <- function(data, downsampled) {
 
 set_excluded <- function(data, exclude) {
     check_serp_class(data)
-    data$excluded <- exclude
+    data$excluded <- purrr::map(exclude, partial(map_genenames, data=data, ...=), exclude)
     data
 }
 
@@ -358,6 +364,47 @@ calc_total_counts <- function(data, what=NULL) {
             })
         })
     })
+}
+
+get_gene_ref_idx <- function(data, gene, ignore_genecol=FALSE, error=TRUE) {
+    check_serp_class(data)
+    genecol <- ifelse(ignore_genecol, "gene", get_default_param(data, genename_column))
+    idx <- which(get_reference(data)[[genecol]] == gene)
+    if (!length(idx) && !ignore_genecol)
+        idx <- which(get_reference(data)$gene == gene)
+    if (!length(idx)) {
+        if (error)
+            rlang::abort("unknown gene")
+        else
+            idx <- NA_integer_
+    } else if (length(idx) > 1) {
+        rlang::abort(sprintf("Ambiguous gene name given. The default name column '%s' probably contains duplicate entries.", genecol))
+    }
+    idx
+}
+
+map_genenames <- function(data, genes) {
+    check_serp_class(data)
+    ref <- get_reference(data)
+    if (!all(genes %in% ref$gene)) {
+        genecol <- get_default_param(data, genename_column)
+        idx <- match(genes, ref[[genecol]])
+        genes[!is.na(idx)] <- ref$gene[idx[!is.na(idx)]]
+    }
+    genes
+}
+
+map_df_genenames <- function(df, data, replace_genecol=FALSE, replace_na=TRUE) {
+    if ((genecol <- get_default_param(data, genename_column)) != "gene") {
+        ref <- dplyr::select(get_reference(data), gene, !!genecol)
+        if (replace_na)
+            ref <- dplyr::mutate(ref, !!genecol:=dplyr::if_else(is.na(!!rlang::sym(genecol)), gene, !!rlang::sym(genecol)))
+        df <- dplyr::right_join(ref, df)
+        if (replace_genecol)
+            df <- dplyr::mutate(df, gene=!!genecol) %>%
+                dplyr::select(-!!genecol)
+    }
+    df
 }
 
 #' @export
@@ -496,7 +543,7 @@ combine_breaks <- function(x, y) {
 combine_defaults <- function(x, y) {
     out <- list()
     if (isTRUE(x$bin != y$bin))
-        out$bin <- 'byaa'
+        out$bin <- .defaults$bin
     else
         out$bin <- x$bin
 
@@ -507,6 +554,11 @@ combine_defaults <- function(x, y) {
 
     if (isTRUE(x$window_size == y$window_size))
         out$window_size <- x$window_size
+
+    if (isTRUE(x$genename_column != y$genename_column))
+        out$genename_column <- .defaults$genename_column
+    else
+        out$genename_column <- x$genename_column
 
     out$plot_ylim_rpm <- combine_limits(x$plot_ylim_rpm, y$plot_ylim_rpm)
     out$plot_ybreaks_rpm <- combine_breaks(x$plot_ybreaks_rpm, y$plot_ybreaks_rpm)
