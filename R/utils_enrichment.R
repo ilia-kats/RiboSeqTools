@@ -366,7 +366,7 @@ plot.serp_data <- function(data, gene, type=c("enrichment", "rpm"), samples, sam
             ggplot2::scale_alpha_continuous(trans="sqrt", breaks=c(1,3,10,30), limits=c(0,30), name="prec", range=c(0.02,1)) +
             rlang::exec(annotate_profile, highlightregion=highlightregion, !!!highlightargs) +
             ggplot2::geom_rect(ggplot2::aes(xmin=xmin, xmax=xmax, ymin=lo_CI, ymax=hi_CI, alpha=alpha)) +
-            ggplot2::geom_rect(ggplot2::aes(xmin=overlap.xmin, xmax=overlap.xmax, ymin=overlap.ymin, ymax=overlap.ymax, alpha=mean_alpha), data=function(y)filter(y, overlap > 0, !is.na(overlap.xmax))) +
+            ggplot2::geom_rect(ggplot2::aes(xmin=overlap.xmin, xmax=overlap.xmax, ymin=overlap.ymin, ymax=overlap.ymax, alpha=mean_alpha), data=function(y)dplyr::filter(y, overlap > 0, !is.na(overlap.xmax))) +
             ggplot2::labs(title=gene, x=sprintf("position / %s", xunit), y=ylab)
     if (inherits(fillscale, "ScaleDiscrete"))
         p + fillscale
