@@ -17,7 +17,7 @@
 
 \method{get_reference}{serp_data}(data)
 
-\method{get_total_counts}{serp_data}(data)
+\method{get_total_counts}{serp_data}(data, as_df = FALSE)
 
 \method{get_defaults}{serp_data}(data)
 
@@ -45,7 +45,8 @@ get_binding_pvalues(data)
              \item{length}{ORF length in nucleotides.}
              \item{cds_length}{ORF length in codons.}}
          }
-     \item{get_total_counts}{Nested named list containing toal read counts for each sample.}
+     \item{get_total_counts}{Nested named list containing toal read counts for each sample. If \code{as_df}
+         is \code{TRUE}, returns a \code{\link[tibble]{tibble}} instead.}
      \item{get_defaults}{Named list of default parameters for this data set.}
      \item{get_background_model}{Background model estimated by \code{\link{fit_background_model}}.}
      \item{get_binding_pvalues}{Binding p-values calculated by \code{\link{test_binding}}.}

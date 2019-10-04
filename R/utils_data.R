@@ -108,7 +108,8 @@ get_elbow_threshold <- function(xvals, yvals, upper_plateau=FALSE) {
 #'              \item{length}{ORF length in nucleotides.}
 #'              \item{cds_length}{ORF length in codons.}}
 #'          }
-#'      \item{get_total_counts}{Nested named list containing toal read counts for each sample.}
+#'      \item{get_total_counts}{Nested named list containing toal read counts for each sample. If \code{as_df}
+#'          is \code{TRUE}, returns a \code{\link[tibble]{tibble}} instead.}
 #'      \item{get_defaults}{Named list of default parameters for this data set.}
 #'      \item{get_background_model}{Background model estimated by \code{\link{fit_background_model}}.}
 #'      \item{get_binding_pvalues}{Binding p-values calculated by \code{\link{test_binding}}.}
@@ -191,14 +192,22 @@ get_reference.serp_features <- function(data) {
 }
 
 #' @export
-get_total_counts <- function(data) {
+get_total_counts <- function(data, as_df=FALSE) {
     UseMethod("get_total_counts")
 }
 
 #' @rdname serp_data_accessors
 #' @export
-get_total_counts.serp_data <- function(data) {
-    data$total
+get_total_counts.serp_data <- function(data, as_df=FALSE) {
+    total <- data$total
+    if (as_df) {
+        total <- purrr::map_dfr(total, function(exp) {
+            purrr::map_dfr(exp, function(rep) {
+                purrr::map_dfr(rep, function(sample)tibble(total_count=sample), .id='sample')
+            }, .id='rep')
+        }, .id='exp')
+    }
+    total
 }
 
 #' @export
