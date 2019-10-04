@@ -145,8 +145,10 @@ make_aligned_mats <- function(data, align, lengths, pwidth, filter=NULL, binwidt
         if (is.null(.filter))
             .filter <- rownames(d)
         .filter <- intersect(.filter, names(align))
+        alidx <- names(align) %in% .filter # this allows to have the same gene multiple times in align
+        .filter <- names(align)[alidx]
+        align <- align[alidx]
         .lengths <- lengths[.filter];
-        align <- align[.filter]
         t(mapply(function(g, p, l) {
             tlen <- 2 * pwidth + 1
             efflen <- ceiling(tlen / binwidth)
