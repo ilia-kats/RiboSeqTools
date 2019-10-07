@@ -268,21 +268,21 @@ plot_background_model <- function(data, type=c('density', 'ratio')) {
             ggplot2::geom_line(ggplot2::aes(x, density), data=densities, color='red') +
             ggplot2::facet_grid(rep~exp)
     } else if (type == 'ratio') {
-        counts <- mutate(counts, denom=!!rlang::sym(s1)+!!rlang::sym(s2))
-        rcounts <- purrr::map_dfr(bgmodel$model, function(exp) {
-            purrr::map_dfr(exp, function(rep) {
-                rb <- rbetabinom(length(rep$samples[[s1]]),(rep$samples[[s1]] + rep$samples[[s2]]), m=rep$fit$par['m'], s=rep$fit$par['s'])
-                tibble::enframe(rb, name='gene', value=s1) %>%
-                    mutate(gene=names(rep$samples[[s1]]), !!s2 := rep$samples[[s2]], denom=rep$samples[[s1]]+rep$samples[[s2]], type='random')
-            }, .id='rep')
-        }, .id='exp')
-        bind_rows(counts, rcounts) %>%
+        dplyr::mutate(counts, denom=!!rlang::sym(s1)+!!rlang::sym(s2)) %>%
+            dplyr::group_by(exp, rep) %>%
+            dplyr::group_modify(function(.x, .y) {
+                pars <- bgmodel$model[[.y$exp]][[.y$rep]]$fit$par
+                ret <- .x
+                ret[[s1]] <- rbetabinom(nrow(ret), ret$denom, m=pars['m'], s=pars['s'])
+                ret$type='random'
+                dplyr::bind_rows(.x, ret)
+            }) %>%
             ggplot2::ggplot(ggplot2::aes(!!rlang::sym(s2), !!rlang::sym(s1)/denom, shape=type, color=type)) +
-            ggplot2::geom_point(alpha=0.5) +
-            ggplot2::scale_x_log10() +
-            ggplot2::scale_shape_manual(values=c(observed=1, random=20)) +
-            ggplot2::scale_color_manual(values=c(observed='black', random='red')) +
-            ggplot2::facet_grid(rep~exp)
+                ggplot2::geom_point(alpha=0.5) +
+                ggplot2::scale_x_log10() +
+                ggplot2::scale_shape_manual(values=c(observed=1, random=20)) +
+                ggplot2::scale_color_manual(values=c(observed='black', random='red')) +
+                ggplot2::facet_grid(rep~exp)
     }
 }
 
