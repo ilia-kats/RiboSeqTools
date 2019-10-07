@@ -32,11 +32,14 @@ normalize <- function(data) {
 #' Calculate total read counts per gene
 #'
 #' @param data A \code{serp_data} object.
+#' @param stats Whether to return additional statistics per gene. Currently calculates the minimum and maximum
+#'      counts per gene. Note that setting this to \code{TRUE} heavily impacts performance.
 #' @return A \link[tibble]{tibble} with columns \code{exp}, \code{rep}, \code{sample}, \code{counts},
 #'      and \code{RPM}. If \code{\link[=defaults]{genename_column}} is not \code{"gene"}, the tibble will
-#'      in additon contain \code{\link[=defaults]{genename_column}}.
+#'      in additon contain \code{\link[=defaults]{genename_column}}. If \code{stats} is \code{TRUE}, contains
+#'      additional \code{counts} and \code{RPM} columns prefixed with the name of the summary statistic.
 #' @export
-get_genecounts <- function(data) {
+get_genecounts <- function(data, stats=FALSE) {
     check_serp_class(data)
     if (is_normalized(data))
         rlang::abort("normalized data given")
@@ -46,10 +49,21 @@ get_genecounts <- function(data) {
         purrr::map2_dfr(exp, texp[names(exp)], function(rep, trep) {
             purrr::map2_dfr(rep, trep[names(rep)], function(sample, tsample) {
                 touse <- names(sample)[1]
-                Matrix::rowSums(sample[[touse]]) %>%
-                    tibble::enframe(name="gene", value="counts") %>%
-                    dplyr::filter(!(gene %in% exclude[nexp])) %>%
-                    dplyr::mutate(RPM=counts / tsample * 1e6)
+                if (stats) {
+                    lengths <- get_reference(data) %$%
+                            rlang::set_names(if(touse == "byaa")cds_length else length, gene) %>%
+                            magrittr::extract(rownames(sample[[touse]]))
+                    cnts <- purrr::map2_dfr(lengths, 1:length(lengths), function(l, g) {
+                        gcounts <- sample[[touse]][g, 1:l]
+                        tibble::tibble(counts=sum(gcounts), min_counts=min(gcounts), max_counts=max(gcounts))
+                    }, .id='gene')
+                } else {
+                    cnts <- Matrix::rowSums(sample[[touse]]) %>%
+                            tibble::enframe(name="gene", value="counts")
+                }
+                dplyr::filter(cnts, !(gene %in% exclude[nexp])) %>%
+                    dplyr::mutate_if(is.numeric, list(RPM=function(c)c / tsample * 1e6)) %>%
+                    dplyr::rename_at(dplyr::vars(dplyr::contains("RPM", ignore.case=FALSE)), ~gsub("counts_", "", ., fixed=TRUE))
             }, .id="sample")
         }, .id="rep")
     }, .id="exp") %>%

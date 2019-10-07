@@ -4,15 +4,19 @@
 \alias{get_genecounts}
 \title{Calculate total read counts per gene}
 \usage{
-get_genecounts(data)
+get_genecounts(data, stats = FALSE)
 }
 \arguments{
 \item{data}{A \code{serp_data} object.}
+
+\item{stats}{Whether to return additional statistics per gene. Currently calculates the minimum and maximum
+counts per gene. Note that setting this to \code{TRUE} heavily impacts performance.}
 }
 \value{
 A \link[tibble]{tibble} with columns \code{exp}, \code{rep}, \code{sample}, \code{counts},
      and \code{RPM}. If \code{\link[=defaults]{genename_column}} is not \code{"gene"}, the tibble will
-     in additon contain \code{\link[=defaults]{genename_column}}.
+     in additon contain \code{\link[=defaults]{genename_column}}. If \code{stats} is \code{TRUE}, contains
+     additional \code{counts} and \code{RPM} columns prefixed with the name of the summary statistic.
 }
 \description{
 Calculate total read counts per gene
