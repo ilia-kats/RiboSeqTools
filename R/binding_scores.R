@@ -367,7 +367,7 @@ test_binding <- function(data, window_size, bpparam=BiocParallel::bpparam()) {
         mutate(exp=as.factor(exp), rep=as.factor(rep)) %>%
         group_by(exp, rep) %>%
         mutate(p.adj=p.adjust(pval, method='BY')) %>%
-        ungroup() %>%
+        ungroup()
     set_binding_pvalues(data, pvals)
 }
 
