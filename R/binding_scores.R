@@ -129,7 +129,7 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
         dplyr::mutate(rank=dplyr::dense_rank(desc(lo_CI))) %>%
         dplyr::ungroup() %>%
         map_df_genenames(data) %>%
-        dplyr::mutate(scores, exp=as.factor(exp), rep=as.factor(rep))
+        dplyr::mutate(exp=as.factor(exp), rep=as.factor(rep))
 }
 
 #' @importFrom rmutil dbetabinom
