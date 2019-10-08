@@ -265,6 +265,8 @@ make_label_fun <- function(...) {
 }
 
 annotate_profile <- function(highlightregion, ...) {
+    if (is.list(highlightregion) && length(highlightregion) == 0 || is.matrix(highlightregion) && nrow(highlightregion) == 0)
+        return()
     l <- rlang::list2(...)
     l$geom <- 'rect'
     l$ymin <- 0
