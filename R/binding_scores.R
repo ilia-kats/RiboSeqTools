@@ -91,7 +91,7 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
         dplyr::bind_rows(.id='gene') %>%
         {suppressWarnings(dplyr::inner_join(., get_reference(data), by='gene'))} %>%
         dplyr::group_by(exp) %>%
-        dplyr::filter(!(gene %in% exclude[exp[1]])) %>%
+        dplyr::filter(!(gene %in% exclude[[exp[1]]])) %>%
         dplyr::group_by(exp, rep, gene, !!rlang::sym(lencol)) %>%
         dplyr::group_modify(function(.x, .y) {
             pos <- which.max(.x$lo_CI[skip_5prime:(nrow(.x) - skip_3prime)]) + skip_5prime - 1
