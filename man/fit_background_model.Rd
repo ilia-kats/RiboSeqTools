@@ -40,5 +40,5 @@ to follow a beta-binomial distribution. Parameter estimation is performed by max
 for each sample and replicate.
 }
 \seealso{
-\code{\link{get_background_model}}, \code{\link{test_binding}}, \code{\link{get_binding_positions}}
+\code{\link{get_background_model}}, \code{\link{test_binding}}, \code{\link{get_binding_positions}}, \code{\link{plot_binding_positions}}
 }

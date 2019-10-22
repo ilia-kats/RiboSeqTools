@@ -30,5 +30,5 @@ A \link[tibble]{tibble} with the following columns: \describe{
 Calculates continuous binding regions at given FDR.
 }
 \seealso{
-\code{\link{fit_background_model}}, \code{\link{test_binding}}
+\code{\link{fit_background_model}}, \code{\link{test_binding}}, \code{\link{plot_binding_positions}}
 }

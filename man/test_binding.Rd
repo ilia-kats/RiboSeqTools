@@ -30,5 +30,5 @@ from \code{\link{fit_background_model}} are used. Note that the binning mode (by
 will be used.
 }
 \seealso{
-\code{\link{get_binding_pvalues}}, \code{\link{fit_background_model}}, \code{\link{get_binding_positions}}
+\code{\link{get_binding_pvalues}}, \code{\link{fit_background_model}}, \code{\link{get_binding_positions}}, \code{\link{plot_binding_positions}}
 }

@@ -185,7 +185,7 @@ betabinom_gradient <- function(pars, x, n) {
 #' @param quantile Only genes whith \code{sample2 >= quantile(sample2, use_quantile)} will be used for
 #'      parameter estimation. This reduces the effect of random drop-outs on the final model.
 #' @return A \code{serp_data} object.
-#' @seealso \code{\link{get_background_model}}, \code{\link{test_binding}}, \code{\link{get_binding_positions}}
+#' @seealso \code{\link{get_background_model}}, \code{\link{test_binding}}, \code{\link{get_binding_positions}}, \code{\link{plot_binding_positions}}
 #' @export
 fit_background_model <- function(data, sample1, sample2, bin, tunnelcoords=18:90, use_quantile=0.5) {
     check_serp_class(data)
@@ -313,7 +313,7 @@ windowed_readcounts <- function(mat, windowlen) {
 #'      window size of the data set will be used.
 #' @param bpparam A \code{\link[BiocParallel]{BiocParallelParam-class}} object.
 #' @return A \code{serp_data} object.
-#' @seealso \code{\link{get_binding_pvalues}}, \code{\link{fit_background_model}}, \code{\link{get_binding_positions}}
+#' @seealso \code{\link{get_binding_pvalues}}, \code{\link{fit_background_model}}, \code{\link{get_binding_positions}}, \code{\link{plot_binding_positions}}
 #' @export
 #' @importFrom rmutil pbetabinom dbetabinom
 test_binding <- function(data, window_size, bpparam=BiocParallel::bpparam()) {
@@ -390,7 +390,8 @@ test_binding <- function(data, window_size, bpparam=BiocParallel::bpparam()) {
 #'      \item{sample2}{Sum of counts of sample2 within the binding region. Note that the actual column name
 #'              is the value of \code{sample1} given to \code{\link{fit_background_model}}.}
 #'}
-#' @seealso \code{\link{fit_background_model}}, \code{\link{test_binding}}
+#' @seealso \code{\link{fit_background_model}}, \code{\link{test_binding}}, \code{\link{plot_binding_positions}}
+#' @importFrom rlang %@%
 #' @export
 get_binding_positions <- function(data, fdr=0.01) {
     check_serp_class(data)
@@ -398,7 +399,7 @@ get_binding_positions <- function(data, fdr=0.01) {
     pvals <- get_binding_pvalues(data)
     if (is.null(pvals))
         rlang::abort("No p-values present. Run test_binding first.")
-    dplyr::filter(pvals, p.adj < fdr) %>%
+    df <- dplyr::filter(pvals, p.adj < fdr) %>%
         dplyr::group_by(exp, rep, gene) %>%
         dplyr::group_modify(function(.x, .y) {
             if (nrow(.x) > 1) {
@@ -421,4 +422,56 @@ get_binding_positions <- function(data, fdr=0.01) {
         }) %>%
         map_df_genenames(data) %>%
         dplyr::ungroup()
+    df %@% ref <- get_reference(data)
+    df
+}
+
+#' Plot binding regions
+#'
+#' Plots chaperone binding regions in a heat map. Color intensity is proportional to the fraction of replicates
+#' in which binding at the respective position was observed.
+#'
+#' @param df A data frame created by \code{\link{get_binding_positions}}.
+#' @param bgcolor Background color to visualize unbound regions.
+#' @param ylabels Whether to show Y axis labels (gene names). Defaults to suppressing Y axis labels if more than
+#'      10 genes are plotted.
+#' @return A \code{\link[ggplot2]{ggplot}} object.
+#' @seealso \code{\link{fit_background_model}}, \code{\link{test_binding}}, \code{\link{get_binding_positions}}
+#' @export
+plot_binding_positions <- function(df, bgcolor="lightgrey", ylabels=NA) {
+    deps <- purrr::map_lgl(purrr::set_names(c("IRanges", "S4Vectors")), purrr::partial(requireNamespace, ...=, quietly=TRUE))
+    if (!all(deps)) {
+        pkgs <- paste(names(deps)[!deps], collapse=", ")
+        plr <- ifelse(length(pkgs) > 1, "s", "")
+        rlang::abort(sprintf("%s package%s not found, please install the %s package%s to enable this functionality", pkgs, plr, pkgs, plr))
+    }
+
+    dfname <- as.character(rlang::enexpr(df))
+    ref <- attr(df, "ref")
+    if (is.null(ref))
+        rlang::abort(sprintf("'%s' does not have a 'ref' attribute.", dfname))
+
+    df <- dplyr::group_by(df, exp, gene) %>%
+        dplyr::summarize(bound=list(IRanges::IRanges(start=start, end=end))) %>%
+        dplyr::inner_join(ref, by='gene') %>%
+        dplyr::group_by(gene, add=TRUE) %>%
+        dplyr::group_modify(function(.x, .y) {
+            cov <- IRanges::coverage(.x$bound[[1]], width=.x$cds_length)
+            tibble::tibble(xmid=0.5 * (S4Vectors::start(cov) + S4Vectors::end(cov)), width=S4Vectors::width(cov), bound=S4Vectors::runValue(cov), length=.x$cds_length)
+        }) %>%
+        dplyr::ungroup() %>%
+        dplyr::filter(bound > 0) %>%
+        dplyr::mutate(bound=bound / max(bound), gene=factor(gene, levels=unique(gene[order(length, decreasing=TRUE)]), ordered=TRUE))
+    p <- ggplot2::ggplot(df, aes(y=gene, fill=exp)) +
+        geom_tile(ggplot2::aes(x=0.5 * length + 0.5, width=length), fill='lightgrey') +
+        ggplot2::geom_tile(ggplot2::aes(x=xmid, width=width, height=1, alpha=bound)) +
+        ggplot2::scale_x_continuous(expand=ggplot2::expand_scale(), name="position / codons") +
+        ggplot2::scale_alpha_identity() +
+        ggplot2::guides(fill=FALSE) +
+        ggplot2::theme(panel.grid=ggplot2::element_blank(), panel.grid.major=ggplot2::element_blank(), panel.grid.minor=ggplot2::element_blank())
+    if (isFALSE(ylabels) || is.na(ylabels) && max(dplyr::count(df, exp)$n) > 10)
+        p <- p + ggplot2::theme(axis.text.y=ggplot2::element_blank(), axis.ticks.y=ggplot2::element_blank())
+    if (length(unique(df$exp)) > 1)
+        p <- p + ggplot2::facet_wrap(~exp, scales='free_y')
+    p
 }
