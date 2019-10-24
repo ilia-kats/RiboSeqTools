@@ -181,7 +181,10 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
     cfilter <- if(is.null(filter)) genesintersect else filter[filter %in% genesintersect]
     if (!is.null(exclude))
         cfilter <- cfilter[!(cfilter %in% exclude)]
-    mats <- lapply(d, function(m) m[[bin]][cfilter,, drop=FALSE])
+    maxlen <- max(refs[cfilter])
+    if (maxlen < 1)
+        return(tibble())
+    mats <- lapply(d, function(m) m[[bin]][cfilter, 1:maxlen, drop=FALSE])
 
     pars <- list(binwidth=binwidth, binmethod=binmethod, align=align, lengths=refs)
 
@@ -208,24 +211,13 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
                 m[na_ind[na_ind[,2] <= len %/% binwidth], ] <- NA_real_
                 m
             }
-            if (length(unique(sapply(mats, ncol))) == 1) {
-                len <- ceiling(len[1] / binwidth)
+            len <- ceiling(len[1] / binwidth)
 
-                r <- rep(c(rep(rval, binwidth), rep(0, ncol(mats[[1]]))), length.out=ncol(mats[[1]]) * len)
-                if (align == 'stop')
-                    r <- rev(r)
-                r <- matrix(r, ncol=len, byrow=FALSE)
-                mats <- lapply(mats, binmat, r, len)
-            } else {
-                mats <- mapply(function(m, l) {
-                    len <- ceiling(l / binwidth)
-
-                    r <- rep(c(rep(rval, binwidth), rep(0, ncol(m))), length.out=ncol(m) * len)
-                    if (align == 'stop')
-                        r <- rev(r)
-                    binmat(m, r, len)
-                }, mats, len, SIMPLIFY=FALSE)
-            }
+            r <- rep(c(rep(rval, binwidth), rep(0, ncol(mats[[1]]))), length.out=ncol(mats[[1]]) * len)
+            if (align == 'stop')
+                r <- rev(r)
+            r <- matrix(r, ncol=len, byrow=FALSE)
+            mats <- lapply(mats, binmat, r, len)
         }
 
         mats <- mapply(function(m, len) {
