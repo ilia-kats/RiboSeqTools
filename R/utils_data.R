@@ -358,7 +358,7 @@ set_downsampled <- function(data, downsampled) {
 
 set_excluded <- function(data, exclude) {
     check_serp_class(data)
-    data$excluded <- purrr::map(exclude, partial(map_genenames, data=data, ...=))
+    data$excluded <- purrr::map(exclude, purrr::partial(map_genenames, data=data, ...=))
     data
 }
 
