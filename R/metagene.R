@@ -245,19 +245,23 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
         rlang::abort("unrecognized align parameter")
     }
     all <- rlang::exec(profilefun, !!!mats, !!!extrapars, !!!pars)
-    boot <- rlang::exec(do_boot, n=nboot, profilefun=profilefun, mats=mats, bpparam=bpparam, !!!extrapars, !!!pars)
+    if (nboot > 0)
+        boot <- rlang::exec(do_boot, n=nboot, profilefun=profilefun, mats=mats, bpparam=bpparam, !!!extrapars, !!!pars)
 
     if (!is.list(all) && !is.list(boot)) {
         all <- mat_to_df(all, FALSE)
-        boot <- mat_to_df(boot, TRUE)
+        if (nboot > 0) boot <- mat_to_df(boot, TRUE)
     } else {
         all <- lapply(all, mat_to_df, FALSE)
-        boot <- lapply(boot, mat_to_df, TRUE)
+        if (nboot > 0) boot <- lapply(boot, mat_to_df, TRUE)
 
         all <- dplyr::bind_rows(all, .id='type')
-        boot <- dplyr::bind_rows(boot, .id='type')
+        if (nboot > 0) boot <- dplyr::bind_rows(boot, .id='type')
     }
-    d <- dplyr::bind_rows(all, boot)
+    if (nboot > 0)
+        d <- dplyr::bind_rows(all, boot)
+    else
+        d <- all
     d$pos <- d$pos - 1
     if (length(align) == 1 && align %in% c('start', 'stop')) {
         if (align == 'stop')
