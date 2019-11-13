@@ -149,6 +149,8 @@ load_experiment <- function(..., .ref, .bin=c('bynuc', 'byaa'), .exclude=NULL) {
 #' @export
 load_serp <- function(..., ref, normalize=FALSE, bin=c('bynuc', 'byaa'), exclude=list(), defaults=list()) {
     experiments <- rlang::list2(...)
+    if (is.null(names(experiments)) || sum(nchar(names(experiments)) == 0) > 0)
+        rlang::abort("all experiments must be named")
 
     if (missing(ref) && all(sapply(unlist(experiments), test_hdf5))) {
         ref <- make_ref_from_hdf5(unlist(experiments))

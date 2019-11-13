@@ -45,7 +45,7 @@ mat_to_df <- function(mat, boot) {
 #' where \eqn{i} is the position and \eqn{g} the gene.
 #'
 #' @param data A \code{serp_data} object
-#' @param sample1  sample1 Name of the first sample (the numerator). If missing, the default sample1 of the data set
+#' @param sample1 Name of the first sample (the numerator). If missing, the default sample1 of the data set
 #'      will be used.
 #' @param sample2 Name of the second sample (the denominator). If missing, the default sample2 of the data set
 #'      will be used.

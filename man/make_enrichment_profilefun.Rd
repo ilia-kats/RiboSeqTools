@@ -9,7 +9,7 @@ make_enrichment_profilefun(data, sample1, sample2)
 \arguments{
 \item{data}{A \code{serp_data} object}
 
-\item{sample1}{sample1 Name of the first sample (the numerator). If missing, the default sample1 of the data set
+\item{sample1}{Name of the first sample (the numerator). If missing, the default sample1 of the data set
 will be used.}
 
 \item{sample2}{Name of the second sample (the denominator). If missing, the default sample2 of the data set
