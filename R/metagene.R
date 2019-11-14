@@ -240,7 +240,7 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
             }
         }, mats, len, SIMPLIFY=FALSE)
     } else if (is.numeric(align)) {
-        mats <- make_aligned_mats(mats, align, refs, len, binwidth=1, binmethod='sum')
+        mats <- make_aligned_mats(mats, align, refs, len, binwidth=1, binmethod='sum', bpparam=bpparam)
     } else {
         rlang::abort("unrecognized align parameter")
     }
