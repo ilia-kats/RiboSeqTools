@@ -35,9 +35,10 @@ normalize <- function(data) {
 #' @param stats Whether to return additional statistics per gene. Currently calculates the minimum and maximum
 #'      counts per gene. Note that setting this to \code{TRUE} heavily impacts performance.
 #' @return A \link[tibble]{tibble} with columns \code{exp}, \code{rep}, \code{sample}, \code{counts},
-#'      and \code{RPM}. If \code{\link[=defaults]{genename_column}} is not \code{"gene"}, the tibble will
-#'      in additon contain \code{\link[=defaults]{genename_column}}. If \code{stats} is \code{TRUE}, contains
-#'      additional \code{counts} and \code{RPM} columns prefixed with the name of the summary statistic.
+#'      \code{RPM}, and \code{RPKM}. If \code{\link[=defaults]{genename_column}} is not \code{"gene"},
+#'      the tibble will in additon contain \code{\link[=defaults]{genename_column}}. If \code{stats}
+#'      is \code{TRUE}, contains additional \code{counts} and \code{RPM} columns prefixed with the
+#'      name of the summary statistic.
 #' @export
 get_genecounts <- function(data, stats=FALSE) {
     check_serp_class(data)
@@ -67,8 +68,10 @@ get_genecounts <- function(data, stats=FALSE) {
             }, .id="sample")
         }, .id="rep")
     }, .id="exp") %>%
+        dplyr::left_join(dplyr::select(get_reference(data), gene, length)) %>%
         map_df_genenames(data) %>%
-        dplyr::mutate(exp=as.factor(exp), rep=as.factor(rep), sample=as.factor(sample))
+        dplyr::mutate(RPKM=RPM / length * 1e3, exp=as.factor(exp), rep=as.factor(rep), sample=as.factor(sample))%>%
+        dplyr::select(-length)
 }
 
 #' Threshold data using the elbow method
