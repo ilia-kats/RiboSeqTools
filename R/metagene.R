@@ -176,7 +176,7 @@ make_aligned_mats <- function(data, align, lengths, pwidth, filter=NULL, binwidt
     }, BPPARAM=bpparam)
 }
 
-metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), exclude=c(), filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, bpparam=BiocParallel::bpparam()) {
+metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), exclude=c(), filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align='start', nboot=100, bpparam=BiocParallel::bpparam()) {
     genesintersect <- intersect(names(refs), purrr::reduce(lapply(d, function(x)rownames(x[[bin]])), intersect))
     cfilter <- if(is.null(filter)) genesintersect else filter[filter %in% genesintersect]
     if (!is.null(exclude))
@@ -335,7 +335,7 @@ metagene_profiles <- function(data, ...) {
 
 #' @rdname metagene_profiles
 #' @export
-metagene_profiles.serp_data <- function(data, profilefun, len, bin, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, bpparam=BiocParallel::bpparam()) {
+metagene_profiles.serp_data <- function(data, profilefun, len, bin, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align='start', nboot=100, bpparam=BiocParallel::bpparam()) {
     bin <- get_default_param(data, bin)
     binmethod <- match.arg(binmethod)
     ref <- get_reference(data)
@@ -379,7 +379,7 @@ metagene_profiles.serp_data <- function(data, profilefun, len, bin, filter=NULL,
 
 #' @rdname metagene_profiles
 #' @export
-metagene_profiles.serp_features <- function(data, profilefun, len, bin, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align=c('start', 'stop'), nboot=100, bpparam=BiocParallel::bpparam()) {
+metagene_profiles.serp_features <- function(data, profilefun, len, bin, filter=NULL, binwidth=1, binmethod=c('sum', 'mean'), normalizefun=NULL, align='start', nboot=100, bpparam=BiocParallel::bpparam()) {
     bin <- get_default_param(data, bin)
     binmethod <- match.arg(binmethod)
     refs <- setNames(get_reference(data)$length, get_reference(data)$gene)
