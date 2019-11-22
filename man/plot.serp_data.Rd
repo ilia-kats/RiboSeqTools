@@ -4,10 +4,22 @@
 \alias{plot.serp_data}
 \title{Plot a profile along a gene}
 \usage{
-\method{plot}{serp_data}(data, gene, type = c("enrichment", "rpm"),
-  samples, sample1, sample2, exp, rep, bin, window_size,
-  conf.level = 0.95, color = exp, highlightregion = list(),
-  highlightargs = list())
+\method{plot}{serp_data}(
+  data,
+  gene,
+  type = c("enrichment", "rpm"),
+  samples,
+  sample1,
+  sample2,
+  exp,
+  rep,
+  bin,
+  window_size,
+  conf.level = 0.95,
+  color = exp,
+  highlightregion = list(),
+  highlightargs = list()
+)
 }
 \arguments{
 \item{data}{A \code{serp_data} object. Must contain raw (unnormalized) read counts.}

@@ -4,9 +4,17 @@
 \alias{binding_scores}
 \title{Calculate binding scores for each gene in a SeRP experiment}
 \usage{
-binding_scores(data, sample1, sample2, bin, window_size, skip_5prime = 0,
-  skip_3prime = 0, conf.level = 0.95,
-  bpparam = BiocParallel::bpparam())
+binding_scores(
+  data,
+  sample1,
+  sample2,
+  bin,
+  window_size,
+  skip_5prime = 0,
+  skip_3prime = 0,
+  conf.level = 0.95,
+  bpparam = BiocParallel::bpparam()
+)
 }
 \arguments{
 \item{data}{A \code{serp_data} object.}

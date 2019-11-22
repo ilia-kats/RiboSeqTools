@@ -8,15 +8,33 @@
 \usage{
 metagene_profiles(data, ...)
 
-\method{metagene_profiles}{serp_data}(data, profilefun, len, bin,
-  filter = NULL, binwidth = 1, binmethod = c("sum", "mean"),
-  normalizefun = NULL, align = c("start", "stop"), nboot = 100,
-  bpparam = BiocParallel::bpparam())
+\method{metagene_profiles}{serp_data}(
+  data,
+  profilefun,
+  len,
+  bin,
+  filter = NULL,
+  binwidth = 1,
+  binmethod = c("sum", "mean"),
+  normalizefun = NULL,
+  align = c("start", "stop"),
+  nboot = 100,
+  bpparam = BiocParallel::bpparam()
+)
 
-\method{metagene_profiles}{serp_features}(data, profilefun, len, bin,
-  filter = NULL, binwidth = 1, binmethod = c("sum", "mean"),
-  normalizefun = NULL, align = c("start", "stop"), nboot = 100,
-  bpparam = BiocParallel::bpparam())
+\method{metagene_profiles}{serp_features}(
+  data,
+  profilefun,
+  len,
+  bin,
+  filter = NULL,
+  binwidth = 1,
+  binmethod = c("sum", "mean"),
+  normalizefun = NULL,
+  align = c("start", "stop"),
+  nboot = 100,
+  bpparam = BiocParallel::bpparam()
+)
 }
 \arguments{
 \item{data}{The data.}

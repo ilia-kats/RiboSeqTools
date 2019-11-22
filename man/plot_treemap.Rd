@@ -4,8 +4,7 @@
 \alias{plot_treemap}
 \title{Treemap plot of read counts per gene with an additional grouping variable}
 \usage{
-plot_treemap(data, exp, rep, sample, geneclass, title = "",
-  palette = "Set2")
+plot_treemap(data, exp, rep, sample, geneclass, title = "", palette = "Set2")
 }
 \arguments{
 \item{data}{A \code{serp_data} object.}

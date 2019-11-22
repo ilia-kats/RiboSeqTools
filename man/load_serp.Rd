@@ -4,8 +4,14 @@
 \alias{load_serp}
 \title{Import ribosome profiling data}
 \usage{
-load_serp(..., ref, normalize = FALSE, bin = c("bynuc", "byaa"),
-  exclude = list(), defaults = list())
+load_serp(
+  ...,
+  ref,
+  normalize = FALSE,
+  bin = c("bynuc", "byaa"),
+  exclude = list(),
+  defaults = list()
+)
 }
 \arguments{
 \item{...}{Name-value pairs of lists. The name of each argument will be the name of an experiment.

@@ -4,8 +4,7 @@
 \alias{binom_ci}
 \title{Calculate enrichment confidence interval.}
 \usage{
-binom_ci(sample1, sample2, sample1_total, sample2_total,
-  conf.level = 0.95)
+binom_ci(sample1, sample2, sample1_total, sample2_total, conf.level = 0.95)
 }
 \arguments{
 \item{sample1}{Read counts in sample1.}

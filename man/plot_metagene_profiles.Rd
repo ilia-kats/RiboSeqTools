@@ -4,9 +4,18 @@
 \alias{plot_metagene_profiles}
 \title{Plot metagene profiles}
 \usage{
-plot_metagene_profiles(df, ylab, color, group, align = "start",
-  ytrans = "identity", highlightregion = list(),
-  highlightargs = list(), conf.level = 0.95, ci.alpha = 0.3)
+plot_metagene_profiles(
+  df,
+  ylab,
+  color,
+  group,
+  align = "start",
+  ytrans = "identity",
+  highlightregion = list(),
+  highlightargs = list(),
+  conf.level = 0.95,
+  ci.alpha = 0.3
+)
 }
 \arguments{
 \item{df}{A data frame created by \code{\link{metagene_profiles}}.}

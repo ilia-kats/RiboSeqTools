@@ -4,8 +4,18 @@
 \alias{binom_ci_profile}
 \title{Calculate position-wise enrichment confidence intervals}
 \usage{
-binom_ci_profile(data, gene, sample1, sample2, exp, rep, bin, window_size,
-  conf.level = 0.95, ignore_genecol = FALSE)
+binom_ci_profile(
+  data,
+  gene,
+  sample1,
+  sample2,
+  exp,
+  rep,
+  bin,
+  window_size,
+  conf.level = 0.95,
+  ignore_genecol = FALSE
+)
 }
 \arguments{
 \item{data}{A \code{serp_data} object.}

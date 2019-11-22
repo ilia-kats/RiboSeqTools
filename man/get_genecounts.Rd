@@ -14,9 +14,10 @@ counts per gene. Note that setting this to \code{TRUE} heavily impacts performan
 }
 \value{
 A \link[tibble]{tibble} with columns \code{exp}, \code{rep}, \code{sample}, \code{counts},
-     and \code{RPM}. If \code{\link[=defaults]{genename_column}} is not \code{"gene"}, the tibble will
-     in additon contain \code{\link[=defaults]{genename_column}}. If \code{stats} is \code{TRUE}, contains
-     additional \code{counts} and \code{RPM} columns prefixed with the name of the summary statistic.
+     \code{RPM}, and \code{RPKM}. If \code{\link[=defaults]{genename_column}} is not \code{"gene"},
+     the tibble will in additon contain \code{\link[=defaults]{genename_column}}. If \code{stats}
+     is \code{TRUE}, contains additional \code{counts} and \code{RPM} columns prefixed with the
+     name of the summary statistic.
 }
 \description{
 Calculate total read counts per gene

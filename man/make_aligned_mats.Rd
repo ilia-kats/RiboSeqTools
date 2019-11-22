@@ -4,9 +4,16 @@
 \alias{make_aligned_mats}
 \title{Align data matrices}
 \usage{
-make_aligned_mats(data, align, lengths, pwidth, filter = NULL,
-  binwidth = 1, binmethod = c("sum", "mean"),
-  bpparam = BiocParallel::bpparam())
+make_aligned_mats(
+  data,
+  align,
+  lengths,
+  pwidth,
+  filter = NULL,
+  binwidth = 1,
+  binmethod = c("sum", "mean"),
+  bpparam = BiocParallel::bpparam()
+)
 }
 \arguments{
 \item{data}{Names list of data matrices.}

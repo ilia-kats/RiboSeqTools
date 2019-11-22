@@ -4,8 +4,17 @@
 \alias{pois_ci_profile}
 \title{Calculate position-wise confidence intervals}
 \usage{
-pois_ci_profile(data, gene, samples, exp, rep, bin, window_size,
-  conf.level = 0.95, ignore_genecol = FALSE)
+pois_ci_profile(
+  data,
+  gene,
+  samples,
+  exp,
+  rep,
+  bin,
+  window_size,
+  conf.level = 0.95,
+  ignore_genecol = FALSE
+)
 }
 \arguments{
 \item{data}{A \code{serp_data} object.}

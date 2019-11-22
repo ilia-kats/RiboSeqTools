@@ -4,8 +4,14 @@
 \alias{fit_background_model}
 \title{Fit a background model to a selective ribosome profiling data set}
 \usage{
-fit_background_model(data, sample1, sample2, bin, tunnelcoords = 18:90,
-  use_quantile = 0.5)
+fit_background_model(
+  data,
+  sample1,
+  sample2,
+  bin,
+  tunnelcoords = 18:90,
+  use_quantile = 0.5
+)
 }
 \arguments{
 \item{data}{A \code{serp_data} object.}
