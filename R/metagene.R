@@ -198,7 +198,7 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
         if (align == 'stop')
             mats <- lapply(mats, align_stop, refs)
 
-        len <- sapply(mats, function(m)min(ncol(m), len))
+        len <- min(sapply(mats, function(m)min(ncol(m), len)))
 
         if (binwidth > 1) {
             rval <- ifelse(binmethod == 'mean', 1 / binwidth, 1)
@@ -220,7 +220,7 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
             mats <- lapply(mats, binmat, r, len)
         }
 
-        mats <- mapply(function(m, len) {
+        mats <- lapply(mats, function(m, len) {
             coords <- if (align == 'stop') (ncol(m) - len + 1):ncol(m) else 1:len
             m <- m[,coords, drop=FALSE]
             if (align == 'start') {
@@ -238,7 +238,7 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
                     x
                 }, rownames(m), refs[rownames(m)]))
             }
-        }, mats, len, SIMPLIFY=FALSE)
+        }, len)
     } else if (is.numeric(align)) {
         mats <- make_aligned_mats(mats, align, refs, len, binwidth=1, binmethod='sum', bpparam=bpparam)
     } else {
