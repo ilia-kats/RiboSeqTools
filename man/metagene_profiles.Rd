@@ -31,7 +31,7 @@ metagene_profiles(data, ...)
   binwidth = 1,
   binmethod = c("sum", "mean"),
   normalizefun = NULL,
-  align = c("start", "stop"),
+  align = "start",
   nboot = 100,
   bpparam = BiocParallel::bpparam()
 )

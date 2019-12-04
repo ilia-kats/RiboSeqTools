@@ -275,11 +275,11 @@ annotate_profile <- function(highlightregion, ...) {
         l$fill <- 'black'
     if (is.null(l$alpha))
         l$alpha <- 0.1
-    ann <- function(x)rlang::exec(ggplot2::annotate, xmin=x[1], xmax=x[2], !!!l)
+    ann <- function(x, ...)rlang::exec(ggplot2::annotate, xmin=x[1], xmax=x[2], ...)
     if (is.list(highlightregion)) {
-        lapply(highlightregion, ann)
+        purrr::pmap(c(list(x=highlightregion), l), ann)
     } else if (is.matrix(highlightregion) && ncol(highlightregion) == 2) {
-        apply(highlightregion, 1, ann)
+        purrr::pmap(c(list(x=1:nrow(highlightregion)), l), function(x, ...)ann(highlightregion[x,], ...))
     }
 }
 

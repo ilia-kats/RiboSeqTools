@@ -48,7 +48,8 @@ window size of the data set will be used.}
 
 \item{conf.level}{Confidence level.}
 
-\item{highlightargs}{Named list of additional parameters to pass to \code{\link[ggplot2]{annotate}}}
+\item{highlightargs}{Named list of additional parameters to pass to \code{\link[ggplot2]{annotate}}.
+Each list element will be recycled to match the number of annotations.}
 
 \item{colaes}{Variable to use for the color scale.}
 

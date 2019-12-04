@@ -32,7 +32,8 @@ Defaults to \code{rep}, if a column \code{rep} exists in the data frame.}
 
 \item{ytrans}{Y axis transformation.}
 
-\item{highlightargs}{Named list of additional parameters to pass to \code{\link[ggplot2]{annotate}}}
+\item{highlightargs}{Named list of additional parameters to pass to \code{\link[ggplot2]{annotate}}.
+Each list element will be recycled to match the number of annotations.}
 
 \item{conf.level}{Confidence level to plot.}
 
