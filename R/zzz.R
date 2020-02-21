@@ -29,3 +29,11 @@ print_list_name <- function(leader, newchar, name, elem, depth=0) {
         }
     }
 }
+
+print_var_if_exists <- function(var) {
+    vname <- rlang::as_name(rlang::ensym(var))
+    if (rlang::env_has(rlang::caller_env(), nms=vname, inherit=TRUE))
+        var
+    else
+        ""
+}

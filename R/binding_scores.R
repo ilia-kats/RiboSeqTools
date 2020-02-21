@@ -4,6 +4,40 @@ convolve_selection <- function(winsize, len) {
     c(selectstart, selectstop + len)
 }
 
+binding_scores_per_position <- function(data, sample1, sample2, bin, window_size, skip_5prime=0, skip_3prime=0, conf.level=0.95, bpparam=BiocParallel::bpparam()) {
+    check_serp_class(data)
+    stopifnot(!is_normalized(data))
+
+    bin <- get_default_param(data, bin)
+    sample1 <- get_default_param(data, sample1)
+    sample2 <- get_default_param(data, sample2)
+    window_size <- get_default_param(data, window_size)
+
+    exclude <- excluded(data)
+
+    fref <- dplyr::filter(get_reference(data), length > (skip_5prime + window_size + skip_3prime))
+    lencol <- 'length'
+    if (bin == 'byaa') {
+       skip_5prime <- skip_5prime %/% 3
+       skip_3prime <- skip_3prime %/% 3
+       lencol <- 'cds_length'
+    }
+
+    BiocParallel::bplapply(rlang::set_names(fref$gene),
+                                    function(gene, ...)binom_ci_profile(data, gene, ...),
+                                    sample1=sample1,
+                                    sample2=sample2,
+                                    bin=bin,
+                                    window_size=window_size,
+                                    conf.level=conf.level,
+                                    ignore_genecol=TRUE,
+                                    BPPARAM=bpparam) %>%
+        dplyr::bind_rows(.id='gene') %>%
+        {suppressWarnings(dplyr::inner_join(., get_reference(data), by='gene'))} %>%
+        dplyr::group_by(exp) %>%
+        dplyr::filter(!(gene %in% exclude[[exp[1]]]))
+}
+
 #' Calculate binding scores for each gene in a SeRP experiment
 #'
 #' A binding score for a gene is defined as the highest value of the position-wise confidence interval for the
@@ -62,36 +96,10 @@ convolve_selection <- function(winsize, len) {
 #' @export
 binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime=0, skip_3prime=0, conf.level=0.95, bpparam=BiocParallel::bpparam()) {
     check_serp_class(data)
-    stopifnot(!is_normalized(data))
-
-    bin <- get_default_param(data, bin)
     sample1 <- get_default_param(data, sample1)
     sample2 <- get_default_param(data, sample2)
-    window_size <- get_default_param(data, window_size)
 
-    exclude <- excluded(data)
-
-    fref <- dplyr::filter(get_reference(data), length > (skip_5prime + window_size + skip_3prime))
-    lencol <- 'length'
-    if (bin == 'byaa') {
-       skip_5prime <- skip_5prime %/% 3
-       skip_3prime <- skip_3prime %/% 3
-       lencol <- 'cds_length'
-    }
-
-    scores <- BiocParallel::bplapply(rlang::set_names(fref$gene),
-                                     function(gene, ...)binom_ci_profile(data, gene, ...),
-                                     sample1=sample1,
-                                     sample2=sample2,
-                                     bin=bin,
-                                     window_size=window_size,
-                                     conf.level=conf.level,
-                                     ignore_genecol=TRUE,
-                                     BPPARAM=bpparam) %>%
-        dplyr::bind_rows(.id='gene') %>%
-        {suppressWarnings(dplyr::inner_join(., get_reference(data), by='gene'))} %>%
-        dplyr::group_by(exp) %>%
-        dplyr::filter(!(gene %in% exclude[[exp[1]]])) %>%
+    binding_scores_per_position(data, sample1, sample2, bin, window_size, skip_5prime, skip_3prime, conf.level, bpparam) %>%
         dplyr::group_by(exp, rep, gene, !!rlang::sym(lencol)) %>%
         dplyr::group_modify(function(.x, .y) {
             pos <- which.max(.x$lo_CI[skip_5prime:(nrow(.x) - skip_3prime)]) + skip_5prime - 1
@@ -126,7 +134,7 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
         dplyr::mutate(rep='avg')
     dplyr::bind_rows(scores, avgscores) %>%
         dplyr::group_by(exp, rep) %>%
-        dplyr::mutate(rank=dplyr::dense_rank(desc(lo_CI))) %>%
+        dplyr::mutate(rank=dplyr::dense_rank(dplyr::desc(lo_CI))) %>%
         dplyr::ungroup() %>%
         map_df_genenames(data) %>%
         dplyr::mutate(exp=as.factor(exp), rep=as.factor(rep))
@@ -356,19 +364,34 @@ test_binding <- function(data, window_size, bpparam=BiocParallel::bpparam()) {
                 l <- l - maxtun
                 if (l > 0) {
                     pvals <- 1 - pbetabinom(s1[g,1:l], s1[g,1:l] + s2[g,1:l], m=mrep$fit$par['m'], s=mrep$fit$par['s']) + dbetabinom(s1[g,1:l], s1[g,1:l] + s2[g,1:l], m=mrep$fit$par['m'], s=mrep$fit$par['s'])
-                    tibble(pos=1:l + maxtun, pval=pvals)
+                    tibble::tibble(pos=1:l + maxtun, pval=pvals)
                 } else {
-                    tibble()
+                    tibble::tibble()
                 }
             }, .id='gene')
         }, .id='rep')
     }, rawdata, bgdata, names(rawdata), SIMPLIFY=FALSE, BPPARAM=bpparam) %>%
         dplyr::bind_rows(.id='exp') %>%
-        mutate(exp=as.factor(exp), rep=as.factor(rep)) %>%
-        group_by(exp, rep) %>%
-        mutate(p.adj=p.adjust(pval, method='BY')) %>%
-        ungroup()
+        dplyr::mutate(exp=as.factor(exp), rep=as.factor(rep)) %>%
+        dplyr::group_by(exp, rep) %>%
+        dplyr::mutate(p.adj=p.adjust(pval, method='BY')) %>%
+        dplyr::ungroup()
     set_binding_pvalues(data, pvals)
+}
+
+
+pos_to_peak_id <- function(pos) {
+    diffs <- rle(c(1, diff(pos)))
+    cumsum(rep(diffs$values > 1, times=diffs$lengths)) + 1
+}
+
+pos_to_start_end <- function(pos) {
+    pidx <- rle(pos_to_peak_id(pos))
+    start <- 1
+    if (length(pidx$lengths) > 1)
+        start <- cumsum(c(start, pidx$lengths[1:(length(pidx$lengths) - 1)]))
+    end <- cumsum(pidx$lengths)
+    tibble::tibble(start=pos[start], end=pos[end], width=end - start + 1)
 }
 
 #' Extract statistically significant binding regions
@@ -377,21 +400,10 @@ test_binding <- function(data, window_size, bpparam=BiocParallel::bpparam()) {
 #'
 #' @param data A \code{serp_data} object. \code{\link{test_binding}} must have been run on the data.
 #' @param fdr False discovery rate.
-#' @return  A \link[tibble]{tibble} with the following columns: \describe{
-#'      \item{exp}{Experiment.}
-#'      \item{rep}{Replicate.}
-#'      \item{gene}{Gene.}
-#'      \item{start}{Start of continuous binding region. If the binning mode for \code{\link{fit_background_model}}
-#'           was \code{byaa}, this will be in codons, otherwise in nucleotides.}
-#'      \item{end}{End of continuous binding region.}
-#'      \item{width}{Width of continuous binding region.}
-#'      \item{sample1}{Sum of counts of sample1 within the binding region. Note that the actual column name
-#'              is the value of \code{sample1} given to \code{\link{fit_background_model}}.}
-#'      \item{sample2}{Sum of counts of sample2 within the binding region. Note that the actual column name
-#'              is the value of \code{sample1} given to \code{\link{fit_background_model}}.}
-#'}
-#' @seealso \code{\link{fit_background_model}}, \code{\link{test_binding}}, \code{\link{plot_binding_positions}}
-#' @importFrom rlang %@%
+#' @templateVar sample_colname_suffix  given to \code{\link{fit_background_model}}
+#' @template binding_positions
+#' @seealso \code{\link{fit_background_model}}, \code{\link{test_binding}}, \code{\link{plot_binding_positions}}, \code{\link{get_binding_positions_by_threshold}}
+#' @importFrom rlang %@%<-
 #' @export
 get_binding_positions <- function(data, fdr=0.01) {
     check_serp_class(data)
@@ -402,26 +414,51 @@ get_binding_positions <- function(data, fdr=0.01) {
     df <- dplyr::filter(pvals, p.adj < fdr) %>%
         dplyr::group_by(exp, rep, gene) %>%
         dplyr::group_modify(function(.x, .y) {
-            if (nrow(.x) > 1) {
-                diffs <- rle(diff(.x$pos))
-                starts <- cumsum(c(1,diffs$lengths[1:(length(diffs$lengths) - 1)]))
-                ends <- cumsum(diffs$lengths)
-                pidx <- which(diffs$values == 1)
-
-                start <- .x$pos[starts[pidx]]
-                end <- .x$pos[ends[pidx]]
-            } else {
-                start <- end <- .x$pos
-            }
-
             s1 <- as.integer(get_data(data)[[.y$exp]][[.y$rep]][[bgmodel$sample1]][[bgmodel$bin]][.y$gene,])
             s2 <- as.integer(get_data(data)[[.y$exp]][[.y$rep]][[bgmodel$sample2]][[bgmodel$bin]][.y$gene,])
-
-            tibble::tibble(start=start, end=end, width=end - start + 1) %>%
-                mutate(!!bgmodel$sample1 := purrr::map2_int(start, end, function(s,e)sum(s1[s:e])), !!bgmodel$sample2 := purrr::map2_int(start, end, function(s,e)sum(s2[s:e])))
+            pos_to_start_end(.x$pos) %>%
+                dplyr::mutate(!!bgmodel$sample1 := purrr::map2_int(start, end, function(s,e)sum(s1[s:e])), !!bgmodel$sample2 := purrr::map2_int(start, end, function(s,e)sum(s2[s:e])))
         }) %>%
         map_df_genenames(data) %>%
         dplyr::ungroup()
+    df %@% ref <- get_reference(data)
+    df
+}
+
+#' Extract binding regions based on a threshold
+#'
+#' Calculates binding regions given a threshold. For each gene, enrichment confidence intervals over
+#' smoothed read counts are calculated by \code{\link{binom_ci_profile}}. If the lower confidence bound
+#' is above the threshold at a position, this position is considered bound with high confidence. If the
+#' threshold lies within the confidence interval for a position, this position is considered bound with
+#' low confidence. Positions with the upper bound of the confidence interval below the threshold are
+#' considered unbound.
+#'
+#' @template scores
+#' @param threshold The enrichment threshold.
+#' @templateVar additional_columns \item{binding_class}{Binding class of the binding region. 2 for high-confidence regions, 1 for low-confidence regions.}
+#' @template binding_positions
+#' @seealso \code{\link{get_binding_positions}}, \code{\link{plot_binding_positions}}
+#' @importFrom rlang %@%<-
+#' @export
+get_binding_positions_by_threshold <- function(data, sample1, sample2, bin, window_size, skip_5prime=0, skip_3prime=0, conf.level=0.95, bpparam=BiocParallel::bpparam(), threshold=1.0) {
+    check_serp_class(data)
+    sample1 <- get_default_param(data, sample1)
+    sample2 <- get_default_param(data, sample2)
+
+    df <- binding_scores_per_position(data, sample1, sample2, bin, window_size, skip_5prime, skip_3prime, conf.level, bpparam) %>%
+        dplyr::rename(pos=winmid) %>%
+        dplyr::mutate(binding_class=dplyr::if_else(lo_CI > threshold, 2L, dplyr::if_else(hi_CI < threshold, 0L, 1L))) %>%
+        dplyr::select(exp, rep, gene, pos, binding_class, !!sample1, !!sample2) %>%
+        dplyr::filter(binding_class > 0) %>%
+        dplyr::group_by(binding_class, exp, rep, gene) %>%
+        dplyr::mutate(pid=pos_to_peak_id(pos)) %>%
+        dplyr::group_by(pid, add=TRUE) %>%
+        dplyr::summarize(!!sample1 := sum(!!rlang::sym(sample1)), !!sample2 := sum(!!rlang::sym(sample2)), start=pos[1], end=pos[dplyr::n()]) %>%
+        dplyr::ungroup() %>%
+        dplyr::mutate(width=end - start + 1, binding_class=as.factor(binding_class)) %>%
+        dplyr::select(exp, rep, gene, start, end, width, !!sample1, !!sample2, binding_class)
+
     df %@% ref <- get_reference(data)
     df
 }
@@ -431,14 +468,17 @@ get_binding_positions <- function(data, fdr=0.01) {
 #' Plots chaperone binding regions in a heat map. Color intensity is proportional to the fraction of replicates
 #' in which binding at the respective position was observed.
 #'
-#' @param df A data frame created by \code{\link{get_binding_positions}}.
+#' @param df A data frame created by \code{\link{get_binding_positions}} or \code{\link{get_binding_positions_by_threshold}}.
 #' @param bgcolor Background color to visualize unbound regions.
 #' @param ylabels Whether to show Y axis labels (gene names). Defaults to suppressing Y axis labels if more than
 #'      10 genes are plotted.
+#' @param lowconf If \code{df} was created by \code{\link{get_binding_positions_by_threshold}}, this
+#'      determines the color intensity of the low-confidence regions.
 #' @return A \code{\link[ggplot2]{ggplot}} object.
-#' @seealso \code{\link{fit_background_model}}, \code{\link{test_binding}}, \code{\link{get_binding_positions}}
+#' @seealso \code{\link{fit_background_model}}, \code{\link{test_binding}}, \code{\link{get_binding_positions}}, \code{get_binding_positions_by_threshold}
+#' @importFrom rlang %@%
 #' @export
-plot_binding_positions <- function(df, bgcolor="lightgrey", ylabels=NA) {
+plot_binding_positions <- function(df, bgcolor="lightgrey", ylabels=NA, lowconf=0.2) {
     deps <- purrr::map_lgl(purrr::set_names(c("IRanges", "S4Vectors")), purrr::partial(requireNamespace, ...=, quietly=TRUE))
     if (!all(deps)) {
         pkgs <- paste(names(deps)[!deps], collapse=", ")
@@ -447,23 +487,29 @@ plot_binding_positions <- function(df, bgcolor="lightgrey", ylabels=NA) {
     }
 
     dfname <- as.character(rlang::enexpr(df))
-    ref <- attr(df, "ref")
+    ref <- df %@% "ref"
     if (is.null(ref))
         rlang::abort(sprintf("'%s' does not have a 'ref' attribute.", dfname))
 
+    nrep <- dplyr::distinct(df, exp, rep) %>%
+        dplyr::count(exp, name="nrep")
+    if (!rlang::has_name(df, "binding_class"))
+        df$binding_class <- 2L
     df <- dplyr::group_by(df, exp, gene) %>%
-        dplyr::summarize(bound=list(IRanges::IRanges(start=start, end=end))) %>%
-        dplyr::inner_join(ref, by='gene') %>%
-        dplyr::group_by(gene, add=TRUE) %>%
-        dplyr::group_modify(function(.x, .y) {
-            cov <- IRanges::coverage(.x$bound[[1]], width=.x$cds_length)
-            tibble::tibble(xmid=0.5 * (S4Vectors::start(cov) + S4Vectors::end(cov)), width=S4Vectors::width(cov), bound=S4Vectors::runValue(cov), length=.x$cds_length)
-        }) %>%
+        dplyr::summarize(bound=list(IRanges::IRanges(start=start, end=end, binding_class=binding_class))) %>%
         dplyr::ungroup() %>%
-        dplyr::filter(bound > 0) %>%
-        dplyr::mutate(bound=bound / max(bound), gene=factor(gene, levels=unique(gene[order(length, decreasing=TRUE)]), ordered=TRUE))
-    p <- ggplot2::ggplot(df, aes(y=gene, fill=exp)) +
-        geom_tile(ggplot2::aes(x=0.5 * length + 0.5, width=length), fill='lightgrey') +
+        dplyr::inner_join(ref, by='gene') %>%
+        purrr::pmap_dfr(function(exp, gene, bound, cds_length, ...) {
+            bclass <- mcols(bound)$binding_class
+            weight <- dplyr::if_else(bclass == 2L, 1, dplyr::if_else(bclass == 1L, lowconf, 0))
+            cov <- IRanges::coverage(bound, width=cds_length, weight=weight)
+            tibble::tibble(exp=exp, gene=gene, xmid=0.5 * (S4Vectors::start(cov) + S4Vectors::end(cov)), width=S4Vectors::width(cov), bound=S4Vectors::runValue(cov), length=cds_length)
+        }) %>%
+        dplyr::filter(bound > .Machine$double.eps) %>%
+        dplyr::inner_join(nrep) %>%
+        dplyr::mutate(bound=bound / nrep, gene=factor(gene, levels=unique(gene[order(length, decreasing=TRUE)]), ordered=TRUE))
+    p <- ggplot2::ggplot(df, ggplot2::aes(y=gene, fill=exp)) +
+        ggplot2::geom_tile(ggplot2::aes(x=0.5 * length + 0.5, width=length), fill=bgcolor) +
         ggplot2::geom_tile(ggplot2::aes(x=xmid, width=width, height=1, alpha=bound)) +
         ggplot2::scale_x_continuous(expand=ggplot2::expand_scale(), name="position / codons") +
         ggplot2::scale_alpha_identity() +

@@ -23,9 +23,9 @@ Imports:
     BiocParallel
 Suggests:
     h5,
-    IRanges,
+    IRanges (>= 2.20),
     S4Vectors
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.0.0
+RoxygenNote: 7.0.2

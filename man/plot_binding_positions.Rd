@@ -4,15 +4,18 @@
 \alias{plot_binding_positions}
 \title{Plot binding regions}
 \usage{
-plot_binding_positions(df, bgcolor = "lightgrey", ylabels = NA)
+plot_binding_positions(df, bgcolor = "lightgrey", ylabels = NA, lowconf = 0.2)
 }
 \arguments{
-\item{df}{A data frame created by \code{\link{get_binding_positions}}.}
+\item{df}{A data frame created by \code{\link{get_binding_positions}} or \code{\link{get_binding_positions_by_threshold}}.}
 
 \item{bgcolor}{Background color to visualize unbound regions.}
 
 \item{ylabels}{Whether to show Y axis labels (gene names). Defaults to suppressing Y axis labels if more than
 10 genes are plotted.}
+
+\item{lowconf}{If \code{df} was created by \code{\link{get_binding_positions_by_threshold}}, this
+determines the color intensity of the low-confidence regions.}
 }
 \value{
 A \code{\link[ggplot2]{ggplot}} object.
@@ -22,5 +25,5 @@ Plots chaperone binding regions in a heat map. Color intensity is proportional t
 in which binding at the respective position was observed.
 }
 \seealso{
-\code{\link{fit_background_model}}, \code{\link{test_binding}}, \code{\link{get_binding_positions}}
+\code{\link{fit_background_model}}, \code{\link{test_binding}}, \code{\link{get_binding_positions}}, \code{get_binding_positions_by_threshold}
 }

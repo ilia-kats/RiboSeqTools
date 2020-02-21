@@ -21,14 +21,15 @@ A \link[tibble]{tibble} with the following columns: \describe{
      \item{end}{End of continuous binding region.}
      \item{width}{Width of continuous binding region.}
      \item{sample1}{Sum of counts of sample1 within the binding region. Note that the actual column name
-             is the value of \code{sample1} given to \code{\link{fit_background_model}}.}
+             is the value of \code{sample1}given to \code{\link{fit_background_model}}.}
      \item{sample2}{Sum of counts of sample2 within the binding region. Note that the actual column name
-             is the value of \code{sample1} given to \code{\link{fit_background_model}}.}
+             is the value of \code{sample1}given to \code{\link{fit_background_model}}.}
+     
 }
 }
 \description{
 Calculates continuous binding regions at given FDR.
 }
 \seealso{
-\code{\link{fit_background_model}}, \code{\link{test_binding}}, \code{\link{plot_binding_positions}}
+\code{\link{fit_background_model}}, \code{\link{test_binding}}, \code{\link{plot_binding_positions}}, \code{\link{get_binding_positions_by_threshold}}
 }
