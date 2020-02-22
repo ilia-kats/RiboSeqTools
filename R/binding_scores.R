@@ -379,10 +379,9 @@ test_binding <- function(data, window_size, bpparam=BiocParallel::bpparam()) {
     set_binding_pvalues(data, pvals)
 }
 
-
 pos_to_peak_id <- function(pos) {
-    diffs <- rle(c(1, diff(pos)))
-    cumsum(rep(diffs$values > 1, times=diffs$lengths)) + 1
+    diffs <- c(1, diff(pos))
+    cumsum(diffs > 1) + 1
 }
 
 pos_to_start_end <- function(pos) {
