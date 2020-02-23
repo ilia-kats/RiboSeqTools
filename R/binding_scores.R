@@ -101,7 +101,7 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
        lencol <- 'cds_length'
     }
 
-    binding_scores_per_position(data, sample1, sample2, bin, window_size, skip_5prime, skip_3prime, conf.level, bpparam) %>%
+    scores <- binding_scores_per_position(data, sample1, sample2, bin, window_size, skip_5prime, skip_3prime, conf.level, bpparam) %>%
         dplyr::group_by(exp, rep, gene, !!rlang::sym(lencol)) %>%
         dplyr::group_modify(function(.x, .y) {
             pos <- which.max(.x$lo_CI[skip_5prime:(nrow(.x) - skip_3prime)]) + skip_5prime - 1
