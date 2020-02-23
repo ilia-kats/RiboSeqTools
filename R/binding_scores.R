@@ -16,12 +16,6 @@ binding_scores_per_position <- function(data, sample1, sample2, bin, window_size
     exclude <- excluded(data)
 
     fref <- dplyr::filter(get_reference(data), length > (skip_5prime + window_size + skip_3prime))
-    lencol <- 'length'
-    if (bin == 'byaa') {
-       skip_5prime <- skip_5prime %/% 3
-       skip_3prime <- skip_3prime %/% 3
-       lencol <- 'cds_length'
-    }
 
     BiocParallel::bplapply(rlang::set_names(fref$gene),
                                     function(gene, ...)binom_ci_profile(data, gene, ...),
@@ -98,6 +92,14 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
     check_serp_class(data)
     sample1 <- get_default_param(data, sample1)
     sample2 <- get_default_param(data, sample2)
+    bin <- get_default_param(data, bin)
+
+    lencol <- 'length'
+    if (bin == 'byaa') {
+       skip_5prime <- skip_5prime %/% 3
+       skip_3prime <- skip_3prime %/% 3
+       lencol <- 'cds_length'
+    }
 
     binding_scores_per_position(data, sample1, sample2, bin, window_size, skip_5prime, skip_3prime, conf.level, bpparam) %>%
         dplyr::group_by(exp, rep, gene, !!rlang::sym(lencol)) %>%
@@ -128,7 +130,7 @@ binding_scores <- function(data, sample1, sample2, bin, window_size, skip_5prime
         dplyr::ungroup()
     avgscores <- dplyr::group_by(scores, exp, gene) %>%
         dplyr::filter_if(is.numeric, dplyr::all_vars(is.finite(.))) %>%
-        dplyr::filter(n() > 1) %>%
+        dplyr::filter(dplyr::n() > 1) %>%
         dplyr::group_trim() %>%
         dplyr::summarize_if(is.numeric, mean) %>%
         dplyr::mutate(rep='avg')
