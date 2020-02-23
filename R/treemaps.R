@@ -20,13 +20,11 @@ plot_treemap <- function(data, exp, rep, sample, geneclass, title='', palette="S
 
     if (!is.character(exp))
         exp <- as.character(exp)
-    if (!is.character(rep))
-        rep <- as.character(rep)
     if (!is.character(sample))
         sample <- as.character(sample)
 
     if (ncol(geneclass) == 2 && !('class' %in% colnames(geneclass)) && 'gene' %in% colnames(geneclass))
-        geneclass <- dplyr::rename(geneclass, class=-dplyr::matches('gene'))
+        geneclass <- dplyr::rename_at(geneclass, dplyr::vars(-dplyr::matches('gene')), function(...)"class")
     classes <- levels(geneclass$class)
     if (!('unknown' %in% classes))
         classes <- c(classes, 'unknown')
@@ -40,6 +38,8 @@ plot_treemap <- function(data, exp, rep, sample, geneclass, title='', palette="S
         genes <- purrr::reduce(allcounts, function(x, y)intersect(names(x), names(y)))
         purrr::reduce(allcounts, function(x, y)x[genes] + y[genes]) / length(allcounts)
     } else {
+        if (!is.character(rep))
+            rep <- as.character(rep)
         Matrix::rowSums(get_data(data)[[exp]][[rep]][[sample]][[1]], na.rm=TRUE)
     }
     reads_per_gene_sample <- tibble::enframe(reads_per_gene_sample, name='gene', value='read_sum') %>%
@@ -58,7 +58,7 @@ plot_treemap <- function(data, exp, rep, sample, geneclass, title='', palette="S
         dplyr::mutate(perc = n / sum(reads_per_gene_sample$read_sum) * 100) %>%
         tibble::column_to_rownames('class')
     reads_per_gene_sample <- dplyr::group_by(reads_per_gene_sample, class) %>%
-        dplyr::mutate(sort=(as.integer(class) * maxreadsums + 1) / n() + 1/(read_sum + 1))
+        dplyr::mutate(sort=(as.integer(class) * maxreadsums + 1) / dplyr::n() + 1/(read_sum + 1))
     levels(reads_per_gene_sample$class) <- sprintf("%s\n%.1f%%", levels(reads_per_gene_sample$class), fraction_reads[levels(reads_per_gene_sample$class), ]$perc)
 
     grid::grid.newpage()
