@@ -22,3 +22,7 @@ A function that can be passed as \code{profilefun} to \code{\link{metagene_profi
 Position-wise meta-enrichment is calculated as\eqn{E_i = \frac{\sum_g \textrm{sample1}_{gi}}{\sum_g \textrm{sample2}_{gi}}}{E_i = sum(sample[,i]) / sum(sample[,i])}
 where \eqn{i} is the position and \eqn{g} the gene.
 }
+\seealso{
+\link{defaults}, \link{\code{metagene_profiles}}, \link{\code{make_average_profilefun}},
+         \link{\code{make_expression_normalizefun}}
+}

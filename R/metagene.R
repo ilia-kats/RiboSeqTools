@@ -6,7 +6,7 @@ align_stop <- function(d, lengths) {
             x[1:(length(x) - l)] <- 0
         }
         x
-    }, rownames(d), lengths[rownames(d)])), sparse=TRUE)
+    }, rownames(d), lengths)), sparse=TRUE)
 }
 
 do_boot <- function(n, profilefun, mats, bpparam=BiocParallel::bpparam(), ...) {
@@ -50,18 +50,20 @@ mat_to_df <- function(mat, boot) {
 #' @param sample2 Name of the second sample (the denominator). If missing, the default sample2 of the data set
 #'      will be used.
 #' @return A function that can be passed as \code{profilefun} to \code{\link{metagene_profiles}}
+#' @seealso \link{defaults}, \link{\code{metagene_profiles}}, \link{\code{make_average_profilefun}},
+#'          \link{\code{make_expression_normalizefun}}
 #' @export
 make_enrichment_profilefun <- function(data, sample1, sample2) {
     check_serp_class(data)
     sample1 <- get_default_param(data, sample1)
     sample2 <- get_default_param(data, sample2)
 
-    fbody <- substitute({
+    fbody <- substitute(
         if (all(dim(sample1) > 0) && all(dim(sample2) > 0))
             colSums(sample1, na.rm=TRUE) / colSums(sample2, na.rm=TRUE)
         else
             numeric()
-    }, list(sample1=rlang::sym(sample1), sample2=rlang::sym(sample2)))
+    , list(sample1=rlang::sym(sample1), sample2=rlang::sym(sample2)))
 
     profilefun <- function(){}
     args <- alist(sample1=, sample2=, ...=)
@@ -73,28 +75,33 @@ make_enrichment_profilefun <- function(data, sample1, sample2) {
     profilefun
 }
 
-make_average_profilefun_impl <- function(featurenames) {
-    fbody <- sapply(featurenames, function(x)as.expression(substitute(ret[[x]] <- if(!missing(xx) && all(dim(xx) > 0)) colMeans(xx, na.rm=TRUE) else numeric(), env=list(x=x, xx=as.name(x)))))
-    fbody <- c(expression(ret <- list()), fbody, expression(ret))
+make_function <- function(argnames, body) {
     args <- alist()
-    for (arg in featurenames) {
+    for (arg in argnames) {
         tmp <- alist(tmp=)
         names(tmp) <- arg
         args <- c(args, tmp)
     }
     args <- c(args, alist(...=))
-    profilefun <- function(){}
-    formals(profilefun) <- args
-    body(profilefun) <- as.call(c(as.name("{"), fbody))
-    environment(profilefun) <- parent.env(environment())
-    profilefun
+    fun <- function(){}
+    formals(fun) <- args
+    body(fun) <- as.call(c(as.name("{"), body))
+    environment(fun) <- parent.env(environment())
+    fun
 }
 
-#' Generate a default function for metagene profiles that computes the position-wise arithmetic mean
-#'
+make_average_profilefun_impl <- function(featurenames) {
+    fbody <- sapply(featurenames, function(x)as.expression(substitute(ret[[x]] <- if(!missing(xx) && all(dim(xx) > 0)) colMeans(xx, na.rm=TRUE) else numeric(), env=list(x=x, xx=as.name(x)))))
+    fbody <- c(expression(ret <- list()), fbody, expression(ret))
+    make_function(featurenames, fbody)
+}
+
+#' Generate a default function for metagene profiles that computes the position-wise arithmetic mean.
 #'
 #' @param data The data
 #' @return A function that can be passed as \code{profilefun} to \code{\link{metagene_profiles}}
+#' @seealso \link{\code{metagene_profiles}}, \link{make_enrichment_profilefun},
+#'          \link{\code{make_expression_normalizefun}}
 #' @export
 make_average_profilefun <- function(data) {
     UseMethod("make_average_profilefun")
@@ -103,20 +110,54 @@ make_average_profilefun <- function(data) {
 #' @rdname make_average_profilefun
 #' @export
 make_average_profilefun.serp_data <- function(data) {
-    featurenames <- purrr::map(get_data(data), function(exp) {
-        purrr::map(exp, names) %>%
-            purrr::reduce(union)
-    }) %>%
-        purrr::reduce(union)
-
-    make_average_profilefun_impl(featurenames)
+    make_average_profilefun_impl(samples(data))
 }
 
 #' @rdname make_average_profilefun
 #' @export
 make_average_profilefun.serp_features <- function(data) {
-    featurenames <- names(get_data(data))
-    make_average_profilefun_impl(featurenames)
+    make_average_profilefun_impl(features(data))
+}
+
+#' Generate the default function expression-normalized for metagene profiles
+#'
+#' Each gene is normalized to its total exression divided by its length.
+#'
+#' @param data A \code{serp_data} object
+#' @param sample2 Name of the sample which all other samples will be normalized against. If missing,
+#'      the default sample2 of the data set (usually the total translatome) will be used. If missing
+#'      and no default is set, each sample will be normalized to its own expression.
+#' @return A function that can be passed as \code{normalizefun} to \code{\link{metagene_profiles}}
+#' @seealso \link{defaults}, \link{\code{metagene_profiles}}, \link{\code{make_average_profilefun}},
+#'          \link{\code{make_enrichment_profilefun}}
+#' @export
+make_expression_normalizefun <- function(data, sample2) {
+    check_serp_class(data)
+    sample2 <- get_default_param(data, sample2, error=FALSE)
+    samplenames <- samples(data)
+    if (is.null(sample2)) {
+        rlang::warn("Could not determine a total translatome sample. Each sample will be normalized to its own expression. Note: Since only genes with at least one read are included, the result may contain different genes in each sample, make certain that this is handled by profilefun.")
+        fbody <- sapply(samplenames, function(x)as.expression(substitute(
+            if(!missing(xx) && all(dim(xx) > 0)) {
+                norm <- lengths / Matrix::rowSums(xx, na.rm=TRUE)
+                idx <- which(is.finite(norm))
+                ret[[x]] <- xx[idx]  * norm[idx]
+            }
+            , env=list(x=x, xx=as.name(x)))))
+        fbody <- c(fbody, as.expression(substitute()))
+    } else {
+        rlang::inform(sprintf("Normalizing all samples to %s.", sample2))
+        fbody <- sapply(samplenames, function(x)as.expression(substitute(
+            if(!missing(xx) && all(dim(xx) > 0))
+                ret[[x]] <- xx[idx,]  * norm
+            , env=list(x=x, xx=as.name(x)))))
+        fbody <- c(as.expression(substitute(norm <- lengths / Matrix::rowSums(tt, na.rm=TRUE), env=list(tt=as.name(sample2)))),
+                   expression(idx <- which(is.finite(norm))),
+                   expression(norm <- norm[idx]),
+                   fbody)
+    }
+    fbody <- c(expression(ret <- list()), fbody, expression(ret))
+    make_function(c(samplenames, "lengths"), fbody)
 }
 
 #' Align data matrices
@@ -181,7 +222,8 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
     cfilter <- if(is.null(filter)) genesintersect else filter[filter %in% genesintersect]
     if (!is.null(exclude))
         cfilter <- cfilter[!(cfilter %in% exclude)]
-    maxlen <- max(refs[cfilter])
+    refs <- refs[cfilter]
+    maxlen <- max(refs)
     if (maxlen < 1)
         return(tibble())
     mats <- lapply(d, function(m) m[[bin]][cfilter, 1:maxlen, drop=FALSE])
@@ -299,7 +341,9 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
 #'
 #' @param data The data.
 #' @param profilefun Function that calculates a profile. Must accept named arguments for all sample types
-#'      present in the data set as well as \code{exp} (experiment name), \code{rep} (replicate name),
+#'      present in the data set (matrices with genes in rows cropped to the profile region.
+#'      Missing values, e.g. if a gene ends within the profile region, are encoded as \code{NA}.)
+#'      as well as \code{exp} (experiment name), \code{rep} (replicate name),
 #'      \code{binwidth} (bin width), \code{binmethod} (binning method), \code{align} (alignment),
 #'      \code{lengths} (named vector of gene lengths). Must return either a single numeric vector or
 #'      a named list of numeric vectors.
@@ -310,7 +354,10 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
 #' @param binwidth Bin width.
 #' @param binmethod How to bin the data. \code{sum}: Sums all read counts, \code{mean}: Averages read counts
 #' @param normalizefun Function that normalizes the data pefore binning and profile calculation. Must accept
-#'      the same arguments as \code{profilefun}. Must return a named list of matrices.
+#'      the same arguments as \code{profilefun}. Data matrices will contain data for entire genes.
+#'      The \code{lengths} argument is guaranteed to contain only genes present in the data matrices
+#'      in the same order.
+#'      Must return a named list of matrices.
 #' @param align Alignment of the metagene profile, one of \code{start} (5' end) or \code{stop} (3' end).
 #'      Alternatively, a named numeric vector of alignment positions for each gene in \code{filter} can be given. In
 #'      this case, names must correspond to gene names and genes will be aligned to the given positions
@@ -327,7 +374,8 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
 #'          containing the profile.}
 #'      \item{summary}{The value returned by \code{profilefun}.}
 #'}
-#' @seealso \link{defaults}
+#' @seealso \link{defaults}, \link{\code{make_average_profilefun}},
+#'          \link{\code{make_enrichment_profilefun}}, \link{\code{make_expression_normalizefun}}
 #' @export
 metagene_profiles <- function(data, ...) {
     UseMethod("metagene_profiles")

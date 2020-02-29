@@ -119,6 +119,8 @@ get_elbow_threshold <- function(xvals, yvals, upper_plateau=FALSE) {
 #'      \item{get_data}{Nested named list, with first level representing the experiment, second level
 #'          the replicate, third level the sample type, and fourth level the binning. Count tables are
 #'          sparse matrices with each row corresponding to an ORF.}
+#'      \item{experiments}{Character vector containing names of experiments in the data set.}
+#'      \item{samples}{Character vector containing names of all samples present in the data set.}
 #'      \item{get_reference}{Reference data frame. Guaranteed to contain at least the following columns:
 #'          \describe{
 #'              \item{gene}{Gene/ORF name. Must match the names given in the read count tables.}
@@ -146,6 +148,7 @@ NULL
 #' @return \describe{
 #'      \item{get_data}{Nested named list, with first level representing the feature type and second level
 #'          the binning. Data tables are matrices with each row corresponding to an ORF.}
+#'      \item{features}{Character vector containing names of features in the data set.}
 #'      \item{get_reference}{Reference data frame. Guaranteed to contain at least the following columns:
 #'          \describe{
 #'              \item{gene}{Gene/ORF name. Must match the names given in the read count tables.}
@@ -189,6 +192,31 @@ get_data.serp_data <- function(data) {
 #' @export
 get_data.serp_features <- function(data) {
     data$data
+}
+
+#' @rdname serp_data_accessors
+#' @export
+experiments <- function(data) {
+    check_serp_class(data)
+    names(data$data)
+}
+
+#' @rdname serp_data_accessors
+#' @export
+samples <- function(data) {
+    check_serp_class(data)
+    purrr::map(get_data(data), function(exp) {
+        purrr::map(exp, names) %>%
+            purrr::reduce(union)
+    }) %>%
+        purrr::reduce(union)
+}
+
+#' @rdname serp_feature_accessors
+#' @export
+features <- function(data) {
+    check_serp_features_class(data)
+    names(data$data)
 }
 
 #' @export

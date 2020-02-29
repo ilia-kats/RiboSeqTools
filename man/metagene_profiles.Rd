@@ -40,7 +40,9 @@ metagene_profiles(data, ...)
 \item{data}{The data.}
 
 \item{profilefun}{Function that calculates a profile. Must accept named arguments for all sample types
-present in the data set as well as \code{exp} (experiment name), \code{rep} (replicate name),
+present in the data set (matrices with genes in rows cropped to the profile region.
+Missing values, e.g. if a gene ends within the profile region, are encoded as \code{NA}.)
+as well as \code{exp} (experiment name), \code{rep} (replicate name),
 \code{binwidth} (bin width), \code{binmethod} (binning method), \code{align} (alignment),
 \code{lengths} (named vector of gene lengths). Must return either a single numeric vector or
 a named list of numeric vectors.}
@@ -57,7 +59,10 @@ will be used}
 \item{binmethod}{How to bin the data. \code{sum}: Sums all read counts, \code{mean}: Averages read counts}
 
 \item{normalizefun}{Function that normalizes the data pefore binning and profile calculation. Must accept
-the same arguments as \code{profilefun}. Must return a named list of matrices.}
+the same arguments as \code{profilefun}. Data matrices will contain data for entire genes.
+The \code{lengths} argument is guaranteed to contain only genes present in the data matrices
+in the same order.
+Must return a named list of matrices.}
 
 \item{align}{Alignment of the metagene profile, one of \code{start} (5' end) or \code{stop} (3' end).
 Alternatively, a named numeric vector of alignment positions for each gene in \code{filter} can be given. In
@@ -99,5 +104,6 @@ either a single numeric vector, representing a single profile calculated from al
 or a named list of numeric vectors.
 }
 \seealso{
-\link{defaults}
+\link{defaults}, \link{\code{make_average_profilefun}},
+         \link{\code{make_enrichment_profilefun}}, \link{\code{make_expression_normalizefun}}
 }

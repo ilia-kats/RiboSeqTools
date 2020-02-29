@@ -3,11 +3,14 @@
 \name{serp_feature_accessors}
 \alias{serp_feature_accessors}
 \alias{get_data.serp_features}
+\alias{features}
 \alias{get_reference.serp_features}
 \alias{get_defaults.serp_features}
 \title{Accessors for \code{serp_features} objects}
 \usage{
 \method{get_data}{serp_features}(data)
+
+features(data)
 
 \method{get_reference}{serp_features}(data)
 
@@ -20,6 +23,7 @@
 \describe{
      \item{get_data}{Nested named list, with first level representing the feature type and second level
          the binning. Data tables are matrices with each row corresponding to an ORF.}
+     \item{features}{Character vector containing names of features in the data set.}
      \item{get_reference}{Reference data frame. Guaranteed to contain at least the following columns:
          \describe{
              \item{gene}{Gene/ORF name. Must match the names given in the read count tables.}

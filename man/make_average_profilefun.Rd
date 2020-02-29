@@ -4,7 +4,7 @@
 \alias{make_average_profilefun}
 \alias{make_average_profilefun.serp_data}
 \alias{make_average_profilefun.serp_features}
-\title{Generate a default function for metagene profiles that computes the position-wise arithmetic mean}
+\title{Generate a default function for metagene profiles that computes the position-wise arithmetic mean.}
 \usage{
 make_average_profilefun(data)
 
@@ -19,5 +19,9 @@ make_average_profilefun(data)
 A function that can be passed as \code{profilefun} to \code{\link{metagene_profiles}}
 }
 \description{
-Generate a default function for metagene profiles that computes the position-wise arithmetic mean
+Generate a default function for metagene profiles that computes the position-wise arithmetic mean.
+}
+\seealso{
+\link{\code{metagene_profiles}}, \link{make_enrichment_profilefun},
+         \link{\code{make_expression_normalizefun}}
 }
