@@ -25,29 +25,30 @@ test_hdf5 <- function(path) {
 }
 
 require_h5 <- function() {
-    if (!requireNamespace("h5", quietly=TRUE))
-        rlang::abort("h5 package not found, please install the h5 package to read HDF5 files")
+    if (!requireNamespace("hdf5r", quietly=TRUE))
+        rlang::abort("hdf5r package not found, please install the hdf5r package to read HDF5 files")
 }
 
 make_ref_from_hdf5 <- function(paths) {
     require_h5()
     genes <- purrr::map_dfr(paths, function(path) {
-        f <- h5::h5file(path, "r")
-        genes <- h5::list.datasets(f, full.names=FALSE)
+        f <- hdf5r::H5File$new(path, "r")
+        genes <- hdf5r::list.datasets(f)
         genes <- purrr::map_dfr(rlang::set_names(genes), function(g) {
-            dset <- h5::openDataSet(f, g)
-            ret <- tibble::tibble(length=as.integer(h5::h5attr(dset, "cds_length")))
-            attrs <- h5::list.attributes(dset)
+            dset <- f[[g]]
+            ret <- tibble::tibble(length=as.integer(hdf5r::h5attr(dset, "cds_length")))
+            attrs <- hdf5r::h5attr_names(dset)
             for (att in attrs[!(attrs %in% c("gene", "cds_length"))])
-                ret[[att]] <- h5::h5attr(dset, att)
+                ret[[att]] <- hdf5r::h5attr(dset, att)
                 if ("gene" %in% attrs) {
-                    ga <- h5::h5attr(dset, "gene")
+                    ga <- hdf5r::h5attr(dset, "gene")
                     if (ga != g)
                         ret$gene_alt <- ga
                 }
+            dset$close()
             ret
         }, .id='gene')
-        h5::h5close(f)
+        f$close_all()
         genes
     }) %>%
         dplyr::distinct()
@@ -55,15 +56,16 @@ make_ref_from_hdf5 <- function(paths) {
 
 import_hdf5 <- function(path, ref) {
     require_h5()
-
-    f <- h5::h5file(path, "r")
-    genes <- h5::list.datasets(f, full.names=FALSE)
+    f <- hdf5r::H5File$new(path, "r")
+    genes <- hdf5r::list.datasets(f)
     m <- mapply(function(g, i) {
-        dset <- h5::openDataSet(f, g)[]
-        cbind(rep(i, ncol(dset)), t(dset))
-    }, genes, 1:length(genes))
+        dset <- f[[g]]
+        mat <- dset$read()
+        dset$close()
+        cbind(rep(i, ncol(mat)), t(mat))
+    }, genes, 1:length(genes), SIMPLIFY=FALSE)
     m <- do.call(rbind, m)
-    h5::h5close(f)
+    f$close_all()
 
     lengths <- ref$length[match(genes, ref$gene)]
     Matrix::sparseMatrix(i=m[,1], j=m[,2], x=m[,3], dims=c(length(genes), max(lengths)), dimnames=list(genes, NULL))
