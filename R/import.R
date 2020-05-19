@@ -62,7 +62,7 @@ import_hdf5 <- function(path, ref) {
         dset <- f[[g]]
         mat <- dset$read(drop=FALSE)
         dset$close()
-        cbind(rep(i, ncol(mat)), t(mat))
+        cbind(rep(i, nrow(mat)), mat)
     }, genes, 1:length(genes), SIMPLIFY=FALSE)
     m <- do.call(rbind, m)
     f$close_all()

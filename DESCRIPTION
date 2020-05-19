@@ -22,7 +22,7 @@ Imports:
     rmutil,
     BiocParallel
 Suggests:
-    h5,
+    hdf5r,
     IRanges (>= 2.20),
     S4Vectors
 License: GPL-2
