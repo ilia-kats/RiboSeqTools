@@ -60,7 +60,7 @@ import_hdf5 <- function(path, ref) {
     genes <- hdf5r::list.datasets(f)
     m <- mapply(function(g, i) {
         dset <- f[[g]]
-        mat <- dset$read()
+        mat <- dset$read(drop=FALSE)
         dset$close()
         cbind(rep(i, ncol(mat)), t(mat))
     }, genes, 1:length(genes), SIMPLIFY=FALSE)
