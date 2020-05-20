@@ -25,30 +25,35 @@ test_hdf5 <- function(path) {
 }
 
 require_h5 <- function() {
-    if (!requireNamespace("hdf5r", quietly=TRUE))
-        rlang::abort("hdf5r package not found, please install the hdf5r package to read HDF5 files")
+    if (!requireNamespace("rhdf5", quietly=TRUE))
+        rlang::abort("rhdf5 package not found, please install the rhdf5 package to read HDF5 files")
+}
+
+get_hdf5_genes <- function(f) {
+    require_h5()
+    rhdf5::h5ls(f, recursive=FALSE, all=FALSE, datasetinfo=FALSE, order="H5_ITER_NATIVE") %>%
+        dplyr::filter(otype == "H5I_DATASET") %>%
+        dplyr::pull(name)
 }
 
 make_ref_from_hdf5 <- function(paths) {
     require_h5()
-    genes <- purrr::map_dfr(paths, function(path) {
-        f <- hdf5r::H5File$new(path, "r")
-        genes <- hdf5r::list.datasets(f)
+    purrr::map_dfr(paths, function(path) {
+        f <- rhdf5::H5Fopen(path)
+        genes <- get_hdf5_genes(f)
         genes <- purrr::map_dfr(rlang::set_names(genes), function(g) {
-            dset <- f[[g]]
-            ret <- tibble::tibble(length=as.integer(hdf5r::h5attr(dset, "cds_length")))
-            attrs <- hdf5r::h5attr_names(dset)
-            for (att in attrs[!(attrs %in% c("gene", "cds_length"))])
-                ret[[att]] <- hdf5r::h5attr(dset, att)
-                if ("gene" %in% attrs) {
-                    ga <- hdf5r::h5attr(dset, "gene")
-                    if (ga != g)
-                        ret$gene_alt <- ga
+            attrs <- rhdf5::h5readAttributes(f, g)
+            if ("gene" %in% names(attrs)) {
+                ga <- attrs[["gene"]]
+                if (ga != g) {
+                    attrs$gene_alt <- ga
+                    attrs$gene <- NULL
                 }
-            dset$close()
-            ret
+            }
+            tibble::as_tibble(attrs) %>%
+                dplyr::rename(length=cds_length)
         }, .id='gene')
-        f$close_all()
+        rhdf5::H5Fclose(f)
         genes
     }) %>%
         dplyr::distinct()
@@ -56,19 +61,16 @@ make_ref_from_hdf5 <- function(paths) {
 
 import_hdf5 <- function(path, ref) {
     require_h5()
-    f <- hdf5r::H5File$new(path, "r")
-    genes <- hdf5r::list.datasets(f)
-    m <- mapply(function(g, i) {
-        dset <- f[[g]]
-        mat <- dset$read(drop=FALSE)
-        dset$close()
-        cbind(rep(i, nrow(mat)), mat)
-    }, genes, 1:length(genes), SIMPLIFY=FALSE)
-    m <- do.call(rbind, m)
-    f$close_all()
+    dsets <- rhdf5::h5dump(path, recursive=FALSE, load=TRUE, order="H5_ITER_NATIVE")
+    lengths <- sapply(dsets, function(x)ifelse(is.matrix(x), nrow(x), 0))
+    idx <- which(lengths > 0)
+    dsets <- dsets[idx]
+    lengths < lengths[idx]
+    m <- do.call(rbind, dsets)
+    i <- rep(1:length(idx), times=lengths)
 
-    lengths <- ref$length[match(genes, ref$gene)]
-    Matrix::sparseMatrix(i=m[,1], j=m[,2], x=m[,3], dims=c(length(genes), max(lengths)), dimnames=list(genes, NULL))
+    lengths <- ref$length[match(names(dsets), ref$gene)]
+    Matrix::sparseMatrix(i=i, j=m[,1], x=m[,2], dims=c(length(dsets), max(lengths)), dimnames=list(names(dsets), NULL))
 }
 
 load_experiment <- function(..., .ref, .bin=c('bynuc', 'byaa'), .exclude=NULL) {
