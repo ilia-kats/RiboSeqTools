@@ -104,6 +104,6 @@ either a single numeric vector, representing a single profile calculated from al
 or a named list of numeric vectors.
 }
 \seealso{
-\link{defaults}, \link{\code{make_average_profilefun}},
-         \link{\code{make_enrichment_profilefun}}, \link{\code{make_expression_normalizefun}}
+\link{defaults}, \code{\link{make_average_profilefun}},
+         \code{\link{make_enrichment_profilefun}}, \code{\link{make_expression_normalizefun}}
 }

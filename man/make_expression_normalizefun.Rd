@@ -20,6 +20,6 @@ A function that can be passed as \code{normalizefun} to \code{\link{metagene_pro
 Each gene is normalized to its total exression divided by its length.
 }
 \seealso{
-\link{defaults}, \link{\code{metagene_profiles}}, \link{\code{make_average_profilefun}},
-         \link{\code{make_enrichment_profilefun}}
+\link{defaults}, \code{\link{metagene_profiles}}, \code{\link{make_average_profilefun}},
+         \code{\link{make_enrichment_profilefun}}
 }

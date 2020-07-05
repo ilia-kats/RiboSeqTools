@@ -50,8 +50,8 @@ mat_to_df <- function(mat, boot) {
 #' @param sample2 Name of the second sample (the denominator). If missing, the default sample2 of the data set
 #'      will be used.
 #' @return A function that can be passed as \code{profilefun} to \code{\link{metagene_profiles}}
-#' @seealso \link{defaults}, \link{\code{metagene_profiles}}, \link{\code{make_average_profilefun}},
-#'          \link{\code{make_expression_normalizefun}}
+#' @seealso \link{defaults}, \code{\link{metagene_profiles}}, \code{\link{make_average_profilefun}},
+#'          \code{\link{make_expression_normalizefun}}
 #' @export
 make_enrichment_profilefun <- function(data, sample1, sample2) {
     check_serp_class(data)
@@ -100,8 +100,8 @@ make_average_profilefun_impl <- function(featurenames) {
 #'
 #' @param data The data
 #' @return A function that can be passed as \code{profilefun} to \code{\link{metagene_profiles}}
-#' @seealso \link{\code{metagene_profiles}}, \link{make_enrichment_profilefun},
-#'          \link{\code{make_expression_normalizefun}}
+#' @seealso \code{\link{metagene_profiles}}, \link{make_enrichment_profilefun},
+#'          \code{\link{make_expression_normalizefun}}
 #' @export
 make_average_profilefun <- function(data) {
     UseMethod("make_average_profilefun")
@@ -128,8 +128,8 @@ make_average_profilefun.serp_features <- function(data) {
 #'      the default sample2 of the data set (usually the total translatome) will be used. If missing
 #'      and no default is set, each sample will be normalized to its own expression.
 #' @return A function that can be passed as \code{normalizefun} to \code{\link{metagene_profiles}}
-#' @seealso \link{defaults}, \link{\code{metagene_profiles}}, \link{\code{make_average_profilefun}},
-#'          \link{\code{make_enrichment_profilefun}}
+#' @seealso \link{defaults}, \code{\link{metagene_profiles}}, \code{\link{make_average_profilefun}},
+#'          \code{\link{make_enrichment_profilefun}}
 #' @export
 make_expression_normalizefun <- function(data, sample2) {
     check_serp_class(data)
@@ -374,8 +374,8 @@ metagene_profile <- function(d, profilefun, len, bin, refs, extrapars=list(), ex
 #'          containing the profile.}
 #'      \item{summary}{The value returned by \code{profilefun}.}
 #'}
-#' @seealso \link{defaults}, \link{\code{make_average_profilefun}},
-#'          \link{\code{make_enrichment_profilefun}}, \link{\code{make_expression_normalizefun}}
+#' @seealso \link{defaults}, \code{\link{make_average_profilefun}},
+#'          \code{\link{make_enrichment_profilefun}}, \code{\link{make_expression_normalizefun}}
 #' @export
 metagene_profiles <- function(data, ...) {
     UseMethod("metagene_profiles")

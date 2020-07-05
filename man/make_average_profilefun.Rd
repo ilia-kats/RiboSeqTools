@@ -22,6 +22,6 @@ A function that can be passed as \code{profilefun} to \code{\link{metagene_profi
 Generate a default function for metagene profiles that computes the position-wise arithmetic mean.
 }
 \seealso{
-\link{\code{metagene_profiles}}, \link{make_enrichment_profilefun},
-         \link{\code{make_expression_normalizefun}}
+\code{\link{metagene_profiles}}, \link{make_enrichment_profilefun},
+         \code{\link{make_expression_normalizefun}}
 }

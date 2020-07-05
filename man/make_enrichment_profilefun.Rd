@@ -23,6 +23,6 @@ Position-wise meta-enrichment is calculated as\eqn{E_i = \frac{\sum_g \textrm{sa
 where \eqn{i} is the position and \eqn{g} the gene.
 }
 \seealso{
-\link{defaults}, \link{\code{metagene_profiles}}, \link{\code{make_average_profilefun}},
-         \link{\code{make_expression_normalizefun}}
+\link{defaults}, \code{\link{metagene_profiles}}, \code{\link{make_average_profilefun}},
+         \code{\link{make_expression_normalizefun}}
 }
