@@ -501,7 +501,7 @@ plot_binding_positions <- function(df, bgcolor="lightgrey", ylabels=NA, lowconf=
         dplyr::ungroup() %>%
         dplyr::inner_join(ref, by='gene') %>%
         purrr::pmap_dfr(function(exp, gene, bound, cds_length, ...) {
-            bclass <- mcols(bound)$binding_class
+            bclass <- S4Vectors::mcols(bound)$binding_class
             weight <- dplyr::if_else(bclass == 2L, 1, dplyr::if_else(bclass == 1L, lowconf, 0))
             cov <- IRanges::coverage(bound, width=cds_length, weight=weight)
             tibble::tibble(exp=exp, gene=gene, xmid=0.5 * (S4Vectors::start(cov) + S4Vectors::end(cov)), width=S4Vectors::width(cov), bound=S4Vectors::runValue(cov), length=cds_length)
