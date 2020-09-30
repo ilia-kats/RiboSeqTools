@@ -6,7 +6,7 @@ align_stop <- function(d, lengths) {
             x[1:(length(x) - l)] <- 0
         }
         x
-    }, rownames(d), lengths)), sparse=TRUE)
+    }, rownames(d), lengths[rownames(d)])), sparse=TRUE)
 }
 
 do_boot <- function(n, profilefun, mats, bpparam=BiocParallel::bpparam(), ...) {
